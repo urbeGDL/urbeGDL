@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Únete a nuestra causa - UrbeGDL</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="unete.css">
+</head>
+<body>
+    <div class="unete-container">   
+        <div class="unete-box">
+            <img src="imagenes/logo.png" alt="Logo" class="logo-unete">
+            <h1>Únete a nuestra causa</h1>
+            <p class="subtitle">Colabora con UrbeGDL</p>
+            
+            <form onsubmit="registrarUsuario(event)">
+                <div class="input-group">
+                    <label for="nombre">Nombre Completo</label>
+                    <input type="text" id="nombre" placeholder="Juan Pérez García" required>
+                </div>
+                
+                <div class="input-group">
+                    <label for="nacimiento">Fecha de Nacimiento</label>
+                    <input type="date" id="nacimiento" required>
+                </div>
+                
+                <div class="input-group">
+                    <label for="curp">CURP</label>
+                    <input type="text" id="curp" placeholder="AAAA000000HGRRRR01" required>
+                </div>
+                
+                <div class="input-group">
+                    <label for="email">Correo Electrónico</label>
+                    <input type="email" id="email" placeholder="correo@ejemplo.com" required>
+                </div>
+                
+                <div class="input-group">
+                    <label for="telefono">Número de Teléfono</label>
+                    <input type="tel" id="telefono" placeholder="33 1234 5678" required>
+                </div>
+                
+                <button type="submit" class="btn-unete-submit">Registrarse</button>
+            </form>
+            
+            <p class="back-link"><a href="index.html">← Volver al inicio</a></p>
+        </div>
+    </div>
+</body>
+</html>

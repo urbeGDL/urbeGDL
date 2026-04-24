@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#1a2a6c">
+    <title>UrbeGDL - Reportes Ciudadanos</title>
+    <link rel="stylesheet" href="styles.css?v=3">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+
+<!-- Header -->
+<header class="main-header">
+    <div class="header-left">
+        <button class="menu-btn" onclick="toggleSlideMenu()">☰</button>
+    </div>
+    
+    <div class="header-center">
+        <a href="#" class="logo-link" onclick="showSection('reportes')">
+            <img src="imagenes/logo.png" alt="Logo" class="logo-img">
+            <span class="logo-title">UrbeGDL</span>
+        </a>
+    </div>
+    
+    <div class="header-actions">
+        <a href="login.html" class="header-btn header-btn-outline">Iniciar Sesión</a>
+        <a href="unete.html" class="header-btn header-btn-fill">Únete</a>
+    </div>
+    
+    <div class="header-right">
+        <button class="profile-btn" onclick="goToProfile()">
+            <img src="imagenes/logo.png" alt="Perfil" class="profile-img">
+        </button>
+    </div>
+</header>
+
+<!-- Search Bar -->
+<div class="search-container">
+    <div class="search-bar">
+        <span class="search-icon">🔍</span>
+        <input type="text" id="searchInput" placeholder="Buscar reportes..." oninput="filtrarReportes()">
+    </div>
+</div>
+
+<!-- Navigation Tabs -->
+<nav class="nav-tabs">
+    <button class="nav-tab" data-section="reportes" onclick="showSection('reportes')">
+        <span class="tab-icon">📋</span>
+        <span class="tab-label">Reportes</span>
+        <button type="button" class="new-report-btn" onclick="event.stopPropagation(); openReportModal()">+</button>
+    </button>
+    <button class="nav-tab active" data-section="conocenos" onclick="showSection('conocenos')">
+        <span class="tab-icon">ℹ️</span>
+        <span class="tab-label">Conócenos</span>
+    </button>
+</nav>
+
+<!-- Main Content -->
+<main class="main-content">
+    
+    <!-- Reportes Section -->
+    <section id="section-reportes" class="content-section">
+        <div class="section-header">
+            <h2>Reportes Recientes</h2>
+        </div>
+        <div id="reportesGrid" class="masonry-grid"></div>
+    </section>
+    
+    <!-- Conócenos Section -->
+    <section id="section-conocenos" class="content-section active">
+        <div class="conocenos-hero">
+            <h2>¿Qué es UrbeGDL?</h2>
+            <p class="hero-text">UrbeGDL es una iniciativa tecnológica nacida en el corazón de Guadalajara. Nuestra plataforma surge como una respuesta a la necesidad de conectar a los ciudadanos con el entorno urbano, utilizando la tecnología para dar voz a quienes viven y transitan por nuestras calles. Creemos que una ciudad inteligente no es la que tiene más tecnología, sino la que sabe escuchar a su gente.</p>
+        </div>
+        
+        <div class="conocenos-cards">
+            <div class="mision-card">
+                <div class="card-icon">🎯</div>
+                <h3>Misión</h3>
+                <p>Facilitar a los habitantes de la Zona Metropolitana de Guadalajara una herramienta digital directa y eficiente para el reporte de incidencias en la infraestructura pública. Buscamos fomentar la participación ciudadana activa, transformando la preocupación individual en una acción comunitaria que impulse la mejora de nuestra ciudad.</p>
+            </div>
+            
+            <div class="vision-card">
+                <div class="card-icon">👁️</div>
+                <h3>Visión</h3>
+                <p>Consolidarnos como la plataforma ciudadana de referencia en Jalisco para la gestión y visibilización de reportes urbanos. Aspiramos a ser un puente tecnológico que promueva la transparencia y la rapidez en la solución de problemas públicos, contribuyendo a una Guadalajara más organizada, segura y habitable para el año 2030.</p>
+            </div>
+        </div>
+    </section>
+</main>
+
+<!-- FAB (Mobile) -->
+<button class="fab-btn" onclick="openReportModal()">+</button>
+
+<!-- Bottom Tab Bar (Mobile) -->
+<nav class="bottom-tabs">
+    <button class="tab-btn" onclick="showSection('reportes')">
+        <span class="tab-icon">🏠</span>
+        <span class="tab-label">Inicio</span>
+    </button>
+    <button class="tab-btn" onclick="focusSearch()">
+        <span class="tab-icon">🔍</span>
+        <span class="tab-label">Buscar</span>
+    </button>
+    <button class="tab-btn" onclick="openReportModal()">
+        <span class="tab-icon">➕</span>
+        <span class="tab-label">Reportar</span>
+    </button>
+    <button class="tab-btn active" onclick="showSection('conocenos')">
+        <span class="tab-icon">ℹ️</span>
+        <span class="tab-label">Conócenos</span>
+    </button>
+</nav>
+
+<!-- Slide Menu -->
+<div class="slide-menu" id="slideMenu">
+    <div class="menu-overlay" onclick="toggleSlideMenu()"></div>
+    <div class="menu-drawer">
+        <div class="menu-header">
+            <img src="imagenes/logo.png" alt="Logo" class="menu-logo">
+            <h2>UrbeGDL</h2>
+        </div>
+        <div class="menu-body">
+            <a href="#" class="menu-item" onclick="toggleSlideMenu(); showSection('reportes');">
+                <span>📋</span> Reportes
+            </a>
+            <a href="login.html" class="menu-item">
+                <span>🔑</span> Iniciar Sesión
+            </a>
+            <a href="unete.html" class="menu-item">
+                <span>📝</span> Únete
+            </a>
+            <a href="#" class="menu-item" onclick="toggleSlideMenu(); showSection('conocenos');">
+                <span>ℹ️</span> Conócenos
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Report Modal -->
+<div class="report-modal" id="reportModal" onclick="if(event.target === this) closeReportModal()">
+    <div class="modal-container" onclick="event.stopPropagation()">
+        <div class="modal-header">
+            <h2>Nuevo Reporte</h2>
+            <button class="modal-close" onclick="closeReportModal()">×</button>
+        </div>
+        
+        <div class="modal-body">
+            <label class="modal-label">Describe el problema:</label>
+            <textarea id="reportDescripcion" class="modal-input" rows="3" placeholder="Describe el problema (mín. 10 caracteres)"></textarea>
+            
+            <label class="modal-label">📷 Foto (opcional):</label>
+            <div class="modal-upload" onclick="document.getElementById('reportImage').click()">
+                <span id="uploadText">Añadir foto</span>
+                <input type="file" id="reportImage" accept="image/*" onchange="handleImageUpload()" hidden>
+            </div>
+            
+            <label class="modal-label">📍 Ubicación (toca el mapa):</label>
+            <div id="modalMap" class="modal-map"></div>
+            <input type="hidden" id="reportUbicacion" value="">
+            <p id="ubicacionPreview" class="ubicacion-text"></p>
+        </div>
+        
+        <button class="modal-submit" onclick="guardarReporte()">📤 Enviar Reporte</button>
+    </div>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="script.js?v=3"></script>
+</body>
+</html>
