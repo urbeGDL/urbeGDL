@@ -955,6 +955,7 @@ body {
     .main-header {
         padding: 10px 14px;
         z-index: 100;
+        position: relative;
     }
     
     .logo-title {
@@ -965,6 +966,28 @@ body {
         display: block;
         width: 28px;
         height: 28px;
+    }
+    
+    .nav-tabs {
+        padding: 8px 14px;
+        z-index: 80;
+        position: relative;
+        display: flex !important;
+    }
+    
+    .nav-tab {
+        padding: 8px 14px;
+        font-size: 0.85rem;
+        z-index: 85;
+        position: relative;
+    }
+    
+    .fab-btn {
+        display: flex !important;
+        align-items: center;
+        justify-content: center;
+        z-index: 150;
+        position: fixed;
     }
     
     .user-profile-dropdown {
@@ -1017,6 +1040,16 @@ body {
     
     .new-report-btn {
         display: none;
+    }
+    
+    .main-content {
+        z-index: 40;
+        position: relative;
+    }
+    
+    .content-section {
+        z-index: 30;
+        position: relative;
     }
     
     .search-container {
