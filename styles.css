@@ -851,6 +851,7 @@ body {
 @media (max-width: 600px) {
     .main-header {
         padding: 10px 14px;
+        z-index: 100;
     }
     
     .logo-title {
