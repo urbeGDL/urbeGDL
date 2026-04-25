@@ -168,7 +168,9 @@ function cargarReportes() {
     const grid = document.getElementById('reportesGrid');
     if (!grid) return;
     
-    if (!window.db) {
+    console.log('🔍 cargarReportes - db:', window.db, 'firebase:', window.firebase);
+    
+    if (!window.db || !window.firebase) {
         console.log('⏳ Esperando Firebase...');
         grid.innerHTML = '<p style="text-align:center;color:#999;padding:40px;">Conectando a Firebase...</p>';
         setTimeout(cargarReportes, 2000);
@@ -177,47 +179,53 @@ function cargarReportes() {
     
     console.log('👂 Escuchando reportes...');
     
-    const reportesRef = window.db.ref('reportes');
-    
-    reportesRef.on('value', (snapshot) => {
-        console.log('📥 Datos recibidos');
-        grid.innerHTML = '';
+    try {
+        const reportesRef = window.db.ref('reportes');
         
-        const data = snapshot.val();
-        if (!data) {
-            grid.innerHTML = '<p style="text-align:center;color:#999;padding:40px;">No hay reportes aún. ¡Sé el primero!</p>';
-            return;
-        }
-        
-        const reportes = Object.entries(data)
-            .map(([key, value]) => ({ id: key, ...value }))
-            .sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
-        
-        console.log(`📋 ${reportes.length} reportes`);
-        
-        reportes.forEach(reporte => {
-            const card = document.createElement('div');
-            card.className = 'report-card' + (reporte.imagen ? '' : ' no-image');
-            card.innerHTML = `
-                <button class="report-delete-btn" onclick="eliminarReporte('${reporte.id}')">×</button>
-                ${reporte.imagen 
-                    ? `<img src="${reporte.imagen}" class="report-image" alt="Reporte" onerror="this.src='imagenes/noimagen.png'">` 
-                    : `<img src="imagenes/noimagen.png" class="report-image" alt="Sin imagen">`}
-                <div class="report-overlay">
-                    <p class="report-overlay-text">${reporte.descripcion}</p>
-                </div>
-                <div class="report-info">
-                    <p class="report-description">${reporte.descripcion}</p>
-                    <p class="report-location">📍 ${reporte.ubicacion}</p>
-                    <span class="report-date">${reporte.fecha}</span>
-                </div>
-            `;
-            grid.appendChild(card);
+        reportesRef.on('value', (snapshot) => {
+            console.log('📥 Datos recibidos:', snapshot.numChildren(), 'items');
+            grid.innerHTML = '';
+            
+            const data = snapshot.val();
+            if (!data) {
+                grid.innerHTML = '<p style="text-align:center;color:#999;padding:40px;">No hay reportes aún. ¡Sé el primero!</p>';
+                return;
+            }
+            
+            const reportes = Object.entries(data)
+                .map(([key, value]) => ({ id: key, ...value }))
+                .sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+            
+            console.log(`📋 ${reportes.length} reportes`);
+            
+            reportes.forEach(reporte => {
+                const card = document.createElement('div');
+                card.className = 'report-card' + (reporte.imagen ? '' : ' no-image');
+                card.innerHTML = `
+                    <button class="report-delete-btn" onclick="eliminarReporte('${reporte.id}')">×</button>
+                    ${reporte.imagen 
+                        ? `<img src="${reporte.imagen}" class="report-image" alt="Reporte" onerror="this.src='imagenes/noimagen.png'">` 
+                        : `<img src="imagenes/noimagen.png" class="report-image" alt="Sin imagen">`}
+                    <div class="report-overlay">
+                        <p class="report-overlay-text">${reporte.descripcion}</p>
+                    </div>
+                    <div class="report-info">
+                        <p class="report-description">${reporte.descripcion}</p>
+                        <p class="report-location">📍 ${reporte.ubicacion}</p>
+                        <span class="report-date">${reporte.fecha}</span>
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+        }, (error) => {
+            console.error('❌ Error Firebase:', error);
+            grid.innerHTML = '<p style="text-align:center;color:#e74c3c;padding:40px;">Error al cargar reportes</p>';
         });
-    }, (error) => {
-        console.error('❌ Error:', error);
-        grid.innerHTML = '<p style="text-align:center;color:#e74c3c;padding:40px;">Error al cargar reportes</p>';
-    });
+    } catch (e) {
+        console.error('❌ Excepción:', e);
+        grid.innerHTML = '<p style="text-align:center;color:#e74c3c;padding:40px;">Error de conexión</p>';
+        setTimeout(cargarReportes, 3000);
+    }
 }
 
 // ======== ELIMINAR REPORTE ========
