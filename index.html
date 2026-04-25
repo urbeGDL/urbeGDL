@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#1a2a6c">
     <title>UrbeGDL - Reportes Ciudadanos</title>
-    <link rel="stylesheet" href="styles.css?v=4">
+    <link rel="stylesheet" href="styles.css?v=6">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 </head>
 <body>
@@ -25,24 +25,22 @@
         databaseURL: "https://urbegdl-9d9f0-default-rtdb.firebaseio.com"
     };
 
-    // Initialize Firebase
+    // Initialize Firebase - VERSIÓN SIMPLIFICADA
+    let db = null;
     try {
         const app = firebase.initializeApp(firebaseConfig);
-        const db = firebase.database(app);
-        
-        // Export globally
-        window.firebaseDB = { 
-            db: db, 
-            ref: firebase.database.ref, 
-            push: firebase.database.ref, 
-            onValue: firebase.database.onValue, 
-            remove: firebase.database.remove, 
-            set: firebase.database.set 
-        };
-        console.log('✅ Firebase inicializado correctamente');
+        db = firebase.database(app);
+        window.firebaseDB = db;
+        window.firebaseRef = firebase.database.ref;
+        window.firebaseSet = firebase.database.set;
+        window.firebasePush = firebase.database.ref;
+        window.firebaseOnValue = firebase.database.onValue;
+        window.firebaseRemove = firebase.database.remove;
+        console.log('✅ Firebase configurado!');
     } catch (error) {
-        console.error('❌ Error inicializando Firebase:', error);
+        console.error('❌ Error Firebase:', error);
     }
+</script>
 </script>
 
 <!-- Header -->

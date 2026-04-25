@@ -1,9 +1,11 @@
 // ========================================
-// UrbeGDL - Firebase Version v2
+// UrbeGDL - Firebase v3 (CON RECONEXIÓN)
 // ========================================
 
 let mapModal, markerModal;
 let currentImage = null;
+let intentosConexion = 0;
+const MAX_INTENTOS = 5;
 
 // ======== INIT ========
 document.addEventListener('DOMContentLoaded', function() {
@@ -12,20 +14,34 @@ document.addEventListener('DOMContentLoaded', function() {
     escucharReportesFirebase();
 });
 
+// ======== Esperar a que Firebase esté listo =====
+function esperarFirebase(callback) {
+    if (window.firebaseDB && window.firebaseRef) {
+        console.log('✅ Firebase listo');
+        callback();
+    } else {
+        console.log('⏳ Esperando Firebase... Intentos:', intentosConexion + 1);
+        if (intentosConexion < MAX_INTENTOS) {
+            intentosConexion++;
+            setTimeout(() => esperarFirebase(callback), 1000);
+        } else {
+            console.error('❌ Firebase no respondió después de', MAX_INTENTOS, 'intentos');
+            callback(); // Intentar de todos modos
+        }
+    }
+}
+
 // ======== NAVIGATION ========
 function showSection(sectionName) {
     document.querySelectorAll('.nav-tab').forEach(tab => {
         tab.classList.toggle('active', tab.dataset.section === sectionName);
     });
-    
     document.querySelectorAll('.tab-btn').forEach(btn => {
         btn.classList.toggle('active', btn.dataset.section === sectionName);
     });
-    
     document.querySelectorAll('.content-section').forEach(section => {
         section.classList.toggle('active', section.id === 'section-' + sectionName);
     });
-    
     document.getElementById('slideMenu')?.classList.remove('active');
     window.scrollTo({ top: 0, behavior: 'smooth' });
 }
@@ -48,17 +64,13 @@ function initModalMap() {
     if (!mapDiv || typeof L === 'undefined') return;
     
     mapModal = L.map('modalMap', { center: [20.6736, -103.3438], zoom: 13 });
-    
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: '© OpenStreetMap', maxZoom: 18
     }).addTo(mapModal);
     
     mapModal.on('click', function(e) {
-        if (markerModal) {
-            markerModal.setLatLng(e.latlng);
-        } else {
-            markerModal = L.marker(e.latlng).addTo(mapModal);
-        }
+        if (markerModal) markerModal.setLatLng(e.latlng);
+        else markerModal = L.marker(e.latlng).addTo(mapModal);
         
         const ubiInput = document.getElementById('reportUbicacion');
         const ubiPreview = document.getElementById('ubicacionPreview');
@@ -67,25 +79,8 @@ function initModalMap() {
             .then(res => res.json())
             .then(data => {
                 const addr = data.address;
-                let direccion = '';
-                
-                if (addr.road) {
-                    direccion = addr.road;
-                    if (addr.house_number) direccion += ' ' + addr.house_number;
-                } else if (addr.neighbourhood) {
-                    direccion = addr.neighborhood;
-                } else if (addr.suburb) {
-                    direccion = addr.suburb;
-                }
-                
-                if (addr.city || addr.municipality) {
-                    direccion += ', ' + (addr.city || addr.municipality);
-                }
-                
-                if (!direccion) {
-                    direccion = data.display_name || `${e.latlng.lat.toFixed(5)}, ${e.latlng.lng.toFixed(5)}`;
-                }
-                
+                let direccion = addr.road || addr.neighbourhood || addr.suburb || data.display_name;
+                if (addr.city || addr.municipality) direccion += ', ' + (addr.city || addr.municipality);
                 if (ubiInput && ubiPreview) {
                     ubiInput.value = direccion;
                     ubiPreview.textContent = '📍 ' + direccion;
@@ -103,11 +98,7 @@ function initModalMap() {
 
 // ======== MODAL FUNCTIONS ========
 function openReportModal(e) {
-    if (e) {
-        e.preventDefault();
-        e.stopPropagation();
-    }
-    
+    if (e) { e.preventDefault(); e.stopPropagation(); }
     const modal = document.getElementById('reportModal');
     if (modal) {
         modal.classList.add('active');
@@ -119,8 +110,7 @@ function openReportModal(e) {
 }
 
 function closeReportModal() {
-    const modal = document.getElementById('reportModal');
-    if (modal) modal.classList.remove('active');
+    document.getElementById('reportModal')?.classList.remove('active');
 }
 
 // ======== IMAGE UPLOAD ========
@@ -128,12 +118,10 @@ function handleImageUpload() {
     const input = document.getElementById('reportImage');
     const text = document.getElementById('uploadText');
     
-    if (input && input.files && input.files[0]) {
+    if (input?.files?.[0]) {
         const file = input.files[0];
-        
-        // Verify file size (max 5MB for Firebase)
         if (file.size > 5 * 1024 * 1024) {
-            alert('La imagen es muy grande. Máximo 5MB. Por favor selecciona otra.');
+            alert('Imagen muy grande. Máximo 5MB.');
             return;
         }
         
@@ -143,179 +131,134 @@ function handleImageUpload() {
             text.textContent = '✓ Foto seleccionada';
             text.style.color = 'var(--bright-green)';
         };
-        reader.onerror = function() {
-            alert('Error al leer la imagen. Intenta con otra.');
-        };
         reader.readAsDataURL(file);
     }
 }
 
-// ======== GUARDAR REPORTE (FIREBASE) ========
+// ======== GUARDAR REPORTE ========
 function guardarReporte() {
-    console.log('📤 Intentando guardar reporte...');
+    console.log('📤 Guardando reporte...');
     
     const descripcion = document.getElementById('reportDescripcion').value.trim();
     const ubicacion = document.getElementById('reportUbicacion').value;
     
     if (descripcion.length < 10) {
-        alert('Describe el problema (mínimo 10 caracteres)');
+        alert('Mínimo 10 caracteres');
         return;
     }
-    
     if (!ubicacion) {
-        alert('Selecciona una ubicación en el mapa');
+        alert('Selecciona una ubicación');
         return;
     }
     
-    // Verify Firebase is initialized
-    if (!window.firebaseDB || !window.firebaseDB.db) {
-        alert('Error de conexión. Intenta de nuevo en unos segundos.');
-        console.error('❌ Firebase no inicializado');
+    if (!window.firebaseDB || !window.firebaseRef) {
+        alert('Firebase cargando. Intenta en unos segundos.');
         return;
     }
-    
-    const { db, ref, set, push } = window.firebaseDB;
     
     try {
-        const reportesRef = ref(db, 'reportes');
-        const nuevoReporte = push(reportesRef);
+        const reportesRef = window.firebaseRef(window.firebaseDB, 'reportes');
+        const nuevoReporte = window.firebasePush(reportesRef);
         
-        const reporteData = {
+        window.firebaseSet(nuevoReporte, {
             descripcion: descripcion,
             ubicacion: ubicacion,
             fecha: new Date().toLocaleString('es-MX'),
             imagen: currentImage || null,
             timestamp: Date.now()
-        };
-        
-        console.log('📝 Guardando:', reporteData);
-        
-        set(nuevoReporte, reporteData)
-            .then(() => {
-                console.log('✅ Reporte guardado exitosamente!');
-                
-                // Reset form
-                document.getElementById('reportDescripcion').value = '';
-                document.getElementById('reportUbicacion').value = '';
-                document.getElementById('ubicacionPreview').textContent = '';
-                document.getElementById('uploadText').textContent = 'Añadir foto';
-                document.getElementById('uploadText').style.color = '';
-                document.getElementById('reportImage').value = '';
-                currentImage = null;
-                
-                if (markerModal) {
-                    mapModal.removeLayer(markerModal);
-                    markerModal = null;
-                }
-                
-                closeReportModal();
-                alert('✅ Reporte enviado correctamente!');
-            })
-            .catch((error) => {
-                console.error('❌ Error guardando:', error);
-                alert('Error al guardar reporte. Intenta de nuevo.');
-            });
-            
+        }).then(() => {
+            console.log('✅ GUARDADO!');
+            document.getElementById('reportDescripcion').value = '';
+            document.getElementById('reportUbicacion').value = '';
+            document.getElementById('ubicacionPreview').textContent = '';
+            document.getElementById('uploadText').textContent = 'Añadir foto';
+            document.getElementById('uploadText').style.color = '';
+            document.getElementById('reportImage').value = '';
+            currentImage = null;
+            if (markerModal) { mapModal.removeLayer(markerModal); markerModal = null; }
+            closeReportModal();
+        }).catch((error) => {
+            console.error('❌ Error:', error);
+            alert('Error al guardar. Intenta de nuevo.');
+        });
     } catch (error) {
-        console.error('❌ Error:', error);
-        alert('Error al guardar reporte. Intenta de nuevo.');
+        console.error('❌ Exception:', error);
+        alert('Error. Intenta de nuevo.');
     }
 }
 
-// ======== ESCUCHAR REPORTES (FIREBASE) ========
+// ======== ESCUCHAR REPORTES ========
 function escucharReportesFirebase() {
     const grid = document.getElementById('reportesGrid');
     if (!grid) return;
     
-    if (!window.firebaseDB || !window.firebaseDB.db) {
-        console.warn('⏳ Firebase no listo, esperando...');
-        grid.innerHTML = '<p style="grid-column:1/-1;text-align:center;color:#999;padding:40px;">Conectando a Firebase...</p>';
-        
-        // Reintentar en 2 segundos
-        setTimeout(escucharReportesFirebase, 2000);
-        return;
-    }
-    
-    const { db, ref, onValue } = window.firebaseDB;
-    
-    const reportesRef = ref(db, 'reportes');
-    
-    console.log('👂 Esperando reportes de Firebase...');
-    
-    onValue(reportesRef, (snapshot) => {
-        console.log('📥 Datos recibidos de Firebase');
-        grid.innerHTML = '';
-        
-        const data = snapshot.val();
-        if (!data) {
-            console.log('📭 No hay reportes');
-            grid.innerHTML = '<p style="grid-column:1/-1;text-align:center;color:#999;padding:40px;">No hay reportes aún. ¡Sé el primero en reportar!</p>';
+    esperarFirebase(() => {
+        if (!window.firebaseDB || !window.firebaseRef) {
+            console.error('❌ Firebase no disponible');
+            grid.innerHTML = '<p style="text-align:center;color:#999;padding:40px;">Error de conexión. Recarga la página.</p>';
             return;
         }
         
-        // Convert to array and sort by timestamp (newest first)
-        const reportes = Object.entries(data)
-            .map(([key, value]) => ({ id: key, ...value }))
-            .sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+        const reportesRef = window.firebaseRef(window.firebaseDB, 'reportes');
         
-        console.log(`📋 ${reportes.length} reportes encontrados`);
-        
-        reportes.forEach(reporte => {
-            const card = document.createElement('div');
-            card.className = 'report-card' + (reporte.imagen ? '' : ' no-image');
+        window.firebaseOnValue(reportesRef, (snapshot) => {
+            console.log('📥 Datos recibidos');
+            grid.innerHTML = '';
             
-            card.innerHTML = `
-                <button class="report-delete-btn" onclick="eliminarReporte('${reporte.id}')">×</button>
-                ${reporte.imagen 
-                    ? `<img src="${reporte.imagen}" class="report-image" alt="Reporte" onerror="this.src='imagenes/noimagen.png'">` 
-                    : `<img src="imagenes/noimagen.png" class="report-image" alt="Sin imagen">`}
-                <div class="report-overlay">
-                    <p class="report-overlay-text">${reporte.descripcion}</p>
-                </div>
-                <div class="report-info">
-                    <p class="report-description">${reporte.descripcion}</p>
-                    <p class="report-location">📍 ${reporte.ubicacion}</p>
-                    <span class="report-date">${reporte.fecha}</span>
-                </div>
-            `;
+            const data = snapshot.val();
+            if (!data) {
+                grid.innerHTML = '<p style="text-align:center;color:#999;padding:40px;">No hay reportes aún.</p>';
+                return;
+            }
             
-            grid.appendChild(card);
+            const reportes = Object.entries(data)
+                .map(([key, value]) => ({ id: key, ...value }))
+                .sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+            
+            console.log(`📋 ${reportes.length} reportes`);
+            
+            reportes.forEach(reporte => {
+                const card = document.createElement('div');
+                card.className = 'report-card' + (reporte.imagen ? '' : ' no-image');
+                card.innerHTML = `
+                    <button class="report-delete-btn" onclick="eliminarReporte('${reporte.id}')">×</button>
+                    ${reporte.imagen 
+                        ? `<img src="${reporte.imagen}" class="report-image" alt="Reporte" onerror="this.src='imagenes/noimagen.png'">` 
+                        : `<img src="imagenes/noimagen.png" class="report-image" alt="Sin imagen">`}
+                    <div class="report-overlay">
+                        <p class="report-overlay-text">${reporte.descripcion}</p>
+                    </div>
+                    <div class="report-info">
+                        <p class="report-description">${reporte.descripcion}</p>
+                        <p class="report-location">📍 ${reporte.ubicacion}</p>
+                        <span class="report-date">${reporte.fecha}</span>
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+        }, (error) => {
+            console.error('❌ Error listener:', error);
+            grid.innerHTML = '<p style="text-align:center;color:#e74c3c;padding:40px;">Error al cargar</p>';
         });
-    }, (error) => {
-        console.error('❌ Error obteniendo reportes:', error);
-        grid.innerHTML = '<p style="grid-column:1/-1;text-align:center;color:#e74c3c;padding:40px;">Error al cargar reportes</p>';
     });
 }
 
-// ======== ELIMINAR REPORTE (FIREBASE) ========
+// ======== ELIMINAR ========
 function eliminarReporte(id) {
-    if (!confirm('¿Eliminar este reporte?')) return;
+    if (!confirm('¿Eliminar?')) return;
+    if (!window.firebaseDB || !window.firebaseRef) return;
     
-    if (!window.firebaseDB || !window.firebaseDB.db) return;
-    
-    const { db, ref, remove } = window.firebaseDB;
-    
-    const reporteRef = ref(db, 'reportes/' + id);
-    remove(reporteRef)
-        .then(() => {
-            console.log('✅ Reporte eliminado');
-        })
-        .catch((error) => {
-            console.error('❌ Error eliminando:', error);
-            alert('Error al eliminar reporte');
-        });
+    window.firebaseRemove(window.firebaseRef(window.firebaseDB, 'reportes/' + id))
+        .then(() => console.log('✅ Eliminado'))
+        .catch((error) => console.error('❌ Error:', error));
 }
 
-// ======== FILTRAR REPORTES ========
+// ======== FILTRAR ========
 function filtrarReportes() {
-    const searchTerm = document.getElementById('searchInput')?.value.toLowerCase() || '';
-    const cards = document.querySelectorAll('.report-card');
-    
-    cards.forEach(card => {
+    const search = document.getElementById('searchInput')?.value.toLowerCase() || '';
+    document.querySelectorAll('.report-card').forEach(card => {
         const desc = card.querySelector('.report-description')?.textContent.toLowerCase() || '';
-        const location = card.querySelector('.report-location')?.textContent.toLowerCase() || '';
-        
-        const matches = !searchTerm || desc.includes(searchTerm) || location.includes(searchTerm);
-        card.style.display = matches ? '' : 'none';
+        const loc = card.querySelector('.report-location')?.textContent.toLowerCase() || '';
+        card.style.display = (!search || desc.includes(search) || loc.includes(search)) ? '' : 'none';
     });
 }
