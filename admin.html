@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel Admin - UrbeGDL</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="admin.css">
+    
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+</head>
+<body>
+    <div class="admin-container">
+        <header class="admin-header">
+            <a href="index.html" class="back-link">← Volver</a>
+            <h1>⚙️ Panel de Administración</h1>
+            <div class="admin-user">
+                <img id="adminPhoto" src="imagenes/logo.png" alt="Admin">
+                <span id="adminName"></span>
+            </div>
+        </header>
+        
+        <div class="admin-stats" id="adminStats">
+            <div class="stat-card">
+                <span class="stat-icon">👥</span>
+                <span class="stat-value" id="statUsers">0</span>
+                <span class="stat-label">Usuarios</span>
+            </div>
+            <div class="stat-card">
+                <span class="stat-icon">📋</span>
+                <span class="stat-value" id="statReports">0</span>
+                <span class="stat-label">Reportes</span>
+            </div>
+            <div class="stat-card">
+                <span class="stat-icon">📷</span>
+                <span class="stat-value" id="statPhotos">0</span>
+                <span class="stat-label">Con Fotos</span>
+            </div>
+            <div class="stat-card">
+                <span class="stat-icon">✅</span>
+                <span class="stat-value" id="statActivos">0</span>
+                <span class="stat-label">Hoy</span>
+            </div>
+        </div>
+        
+        <div class="admin-actions">
+            <button class="admin-btn primary" onclick="exportarExcel()">
+                <span>📊</span> Exportar Usuarios (Excel)
+            </button>
+            <button class="admin-btn" onclick="exportarReportes()">
+                <span>📋</span> Exportar Reportes (Excel)
+            </button>
+            <button class="admin-btn" onclick="actualizarDatos()">
+                <span>🔄</span> Actualizar
+            </button>
+        </div>
+        
+        <div class="admin-section">
+            <h2>👥 Usuarios Registrados</h2>
+            <div class="admin-table-container">
+                <table class="admin-table" id="usuariosTable">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Nombre</th>
+                            <th>Email</th>
+                            <th>Fecha Registro</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="usuariosBody">
+                        <tr><td colspan="5" style="text-align:center;">Cargando...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        
+        <div class="admin-section">
+            <h2>📋 Todos los Reportes</h2>
+            <div class="admin-table-container">
+                <table class="admin-table" id="reportesTable">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Fecha</th>
+                            <th>Usuario</th>
+                            <th>Descripción</th>
+                            <th>Ubicación</th>
+                            <th>Foto</th>
+                            <th>Eliminar</th>
+                        </tr>
+                    </thead>
+                    <tbody id="reportesBody">
+                        <tr><td colspan="7" style="text-align:center;">Cargando...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyC5hGd8vsY60T0BAuq8RAIx5TpzWNbXThk",
+            authDomain: "urbegdl-9d9f0.firebaseapp.com",
+            projectId: "urbegdl-9d9f0",
+            storageBucket: "urbegdl-9d9f0.firebasestorage.app",
+            messagingSenderId: "698422088985",
+            appId: "1:698422088985:web:7187a9baca0d279a8ca188",
+            databaseURL: "https://urbegdl-9d9f0-default-rtdb.firebaseio.com"
+        };
+        
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+        const auth = firebase.auth();
+        
+        const ADMIN_EMAIL = 'urbegdl@gmail.com';
+        let usuariosData = [];
+        let reportesData = [];
+        
+        auth.onAuthStateChanged((user) => {
+            if (!user || user.email !== ADMIN_EMAIL) {
+                window.location.href = 'index.html';
+                return;
+            }
+            document.getElementById('adminName').textContent = user.displayName || user.email;
+            if (user.photoURL) {
+                document.getElementById('adminPhoto').src = user.photoURL;
+            }
+            cargarDatos();
+        });
+        
+        function cargarDatos() {
+            cargarUsuarios();
+            cargarReportes();
+        }
+        
+        function cargarUsuarios() {
+            db.ref('usuarios').once('value').then((snapshot) => {
+                const data = snapshot.val();
+                usuariosData = [];
+                const tbody = document.getElementById('usuariosBody');
+                tbody.innerHTML = '';
+                
+                if (!data) {
+                    tbody.innerHTML = '<tr><td colspan="5">No hay usuarios registrados</td></tr>';
+                    document.getElementById('statUsers').textContent = '0';
+                    return;
+                }
+                
+                let count = 0;
+                Object.entries(data).forEach(([uid, user]) => {
+                    count++;
+                    usuariosData.push({ uid, ...user });
+                    const row = `
+                        <tr>
+                            <td>${count}</td>
+                            <td>${user.nombre || 'N/A'}</td>
+                            <td>${user.email || 'N/A'}</td>
+                            <td>${user.fechaRegistro || 'N/A'}</td>
+                            <td>
+                                <button class="action-btn delete" onclick="eliminarUsuario('${uid}')">🗑️</button>
+                            </td>
+                        </tr>
+                    `;
+                    tbody.innerHTML += row;
+                });
+                
+                document.getElementById('statUsers').textContent = count;
+            });
+        }
+        
+        function cargarReportes() {
+            db.ref('reportes').once('value').then((snapshot) => {
+                const data = snapshot.val();
+                reportesData = [];
+                const tbody = document.getElementById('reportesBody');
+                tbody.innerHTML = '';
+                
+                if (!data) {
+                    tbody.innerHTML = '<tr><td colspan="7">No hay reportes</td></tr>';
+                    document.getElementById('statReports').textContent = '0';
+                    return;
+                }
+                
+                let count = 0;
+                let conFotos = 0;
+                let hoy = new Date().toLocaleDateString('es-MX');
+                
+                Object.entries(data).forEach(([id, reporte]) => {
+                    count++;
+                    if (reporte.imagen) conFotos++;
+                    reportesData.push({ id, ...reporte });
+                    
+                    const fechaCorta = reporte.fecha ? reporte.fecha.split(',')[0] : '';
+                    const row = `
+                        <tr>
+                            <td>${count}</td>
+                            <td>${fechaCorta}</td>
+                            <td>${reporte.userName || reporte.userEmail || 'Anónimo'}</td>
+                            <td>${(reporte.descripcion || '').substring(0, 50)}...</td>
+                            <td>${(reporte.ubicacion || '').substring(0, 30)}</td>
+                            <td>${reporte.imagen ? '📷 Sí' : '❌ No'}</td>
+                            <td>
+                                <button class="action-btn delete" onclick="eliminarReporteAdmin('${id}')">🗑️</button>
+                            </td>
+                        </tr>
+                    `;
+                    tbody.innerHTML += row;
+                });
+                
+                document.getElementById('statReports').textContent = count;
+                document.getElementById('statPhotos').textContent = conFotos;
+            });
+        }
+        
+        function actualizarDatos() {
+            cargarDatos();
+            alert('✅ Datos actualizados');
+        }
+        
+        function eliminarUsuario(uid) {
+            if (!confirm('⚠️ ¿Eliminar este usuario? Esto también eliminará sus reportes.')) return;
+            
+            db.ref('usuarios/' + uid).remove().then(() => {
+                db.ref('reportes').orderByChild('userId').equalTo(uid).once('value').then((snapshot) => {
+                    snapshot.forEach((child) => {
+                        child.ref.remove();
+                    });
+                });
+                cargarUsuarios();
+                alert('✅ Usuario eliminado');
+            });
+        }
+        
+        function eliminarReporteAdmin(id) {
+            if (!confirm('¿Eliminar este reporte?')) return;
+            
+            db.ref('reportes/' + id).remove().then(() => {
+                cargarReportes();
+                alert('✅ Reporte eliminado');
+            });
+        }
+        
+        function exportarExcel() {
+            if (usuariosData.length === 0) {
+                alert('No hay usuarios para exportar');
+                return;
+            }
+            
+            let csv = 'Nombre,Email,Fecha Registro,UID\n';
+            usuariosData.forEach(user => {
+                csv += `"${user.nombre || ''}","${user.email || ''}","${user.fechaRegistro || ''}","${user.uid || ''}"\n`;
+            });
+            
+            descargarArchivo(csv, 'usuarios_urbegdl.csv', 'text/csv');
+        }
+        
+        function exportarReportes() {
+            if (reportesData.length === 0) {
+                alert('No hay reportes para exportar');
+                return;
+            }
+            
+            let csv = 'Fecha,Usuario,Email,Descripción,Ubicación,Tiene Foto,Timestamp\n';
+            reportesData.forEach(reporte => {
+                csv += `"${reporte.fecha || ''}","${reporte.userName || ''}","${reporte.userEmail || ''}","${(reporte.descripcion || '').replace(/"/g, '""')}","${reporte.ubicacion || ''}","${reporte.imagen ? 'Sí' : 'No'}","${reporte.timestamp || ''}"\n`;
+            });
+            
+            descargarArchivo(csv, 'reportes_urbegdl.csv', 'text/csv');
+        }
+        
+        function descargarArchivo(contenido, nombre, tipo) {
+            const blob = new Blob([contenido], { type: tipo });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = nombre;
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+    </script>
+</body>
+</html>
