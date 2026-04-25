@@ -12,7 +12,6 @@
 
 <!-- Firebase Configuration v8 (compatible) -->
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
-<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
 
 <script>
@@ -26,14 +25,11 @@
         databaseURL: "https://urbegdl-9d9f0-default-rtdb.firebaseio.com"
     };
 
-    const ADMIN_EMAIL = 'urbegdl@gmail.com';
-    
     // Initialize Firebase v8
     try {
         firebase.initializeApp(firebaseConfig);
         window.firebase = firebase;
         window.db = firebase.database();
-        window.auth = firebase.auth();
         console.log('✅ Firebase v8 configurado!');
     } catch (error) {
         console.error('❌ Error Firebase:', error);
@@ -53,29 +49,15 @@
         </a>
     </div>
     
-    <div class="header-actions" id="headerActions">
-        <a href="login.html" class="header-btn header-btn-outline" id="btnLogin">Iniciar Sesión</a>
-        <a href="unete.html" class="header-btn header-btn-fill" id="btnUnete">Únete</a>
+    <div class="header-actions">
+        <a href="login.html" class="header-btn header-btn-outline">Iniciar Sesión</a>
+        <a href="unete.html" class="header-btn header-btn-fill">Únete</a>
     </div>
     
     <div class="header-right">
-        <div class="user-profile-dropdown" id="userProfileDropdown" style="display:none;">
-            <button class="profile-circle" id="profileCircle" onclick="toggleUserMenu()">
-                <img id="userPhoto" src="imagenes/logo.png" alt="Perfil" class="profile-photo-img">
-            </button>
-            <div class="user-dropdown-menu" id="userDropdownMenu">
-                <div class="dropdown-user-info">
-                    <span id="dropdownUserName" class="dropdown-user-name"></span>
-                    <span id="dropdownUserEmail" class="dropdown-user-email"></span>
-                </div>
-                <button class="dropdown-item admin-only" id="btnAdminPanel" onclick="irAdmin()" style="display:none;">
-                    <span>⚙️</span> Panel Admin
-                </button>
-                <button class="dropdown-item" onclick="cerrarSesion()">
-                    <span>🚪</span> Cerrar Sesión
-                </button>
-            </div>
-        </div>
+        <button class="profile-btn" onclick="goToProfile()">
+            <img src="imagenes/logo.png" alt="Perfil" class="profile-img">
+        </button>
     </div>
 </header>
 
@@ -92,10 +74,7 @@
     <button class="nav-tab" data-section="reportes" onclick="showSection('reportes')">
         <span class="tab-icon">📋</span>
         <span class="tab-label">Reportes</span>
-    </button>
-    <button class="nav-tab" data-section="nuevo" onclick="openReportModal()">
-        <span class="tab-icon">➕</span>
-        <span class="tab-label">Nuevo</span>
+        <button type="button" class="new-report-btn" onclick="event.stopPropagation(); openReportModal()">+</button>
     </button>
     <button class="nav-tab active" data-section="conocenos" onclick="showSection('conocenos')">
         <span class="tab-icon">ℹ️</span>
@@ -138,7 +117,7 @@
 </main>
 
 <!-- FAB (Mobile) -->
-<button class="fab-btn" id="fabBtn" onclick="openReportModal()">+</button>
+<button class="fab-btn" onclick="openReportModal()">+</button>
 
 <!-- Bottom Tab Bar (Mobile) -->
 <nav class="bottom-tabs">
@@ -212,73 +191,6 @@
         <button class="modal-submit" onclick="guardarReporte()">📤 Enviar Reporte</button>
     </div>
 </div>
-
-<script>
-    // Auth state listener
-    window.auth.onAuthStateChanged((user) => {
-        console.log('Auth state:', user ? user.email : 'logged out');
-        updateUI(user);
-    });
-    
-    function updateUI(user) {
-        const headerActions = document.getElementById('headerActions');
-        const userProfileDropdown = document.getElementById('userProfileDropdown');
-        const userPhoto = document.getElementById('userPhoto');
-        const dropdownUserName = document.getElementById('dropdownUserName');
-        const dropdownUserEmail = document.getElementById('dropdownUserEmail');
-        const btnAdminPanel = document.getElementById('btnAdminPanel');
-        const ADMIN_EMAIL = 'urbegdl@gmail.com';
-        
-        if (user) {
-            if (headerActions) {
-                headerActions.style.display = 'none';
-                headerActions.classList.add('hidden');
-            }
-            if (userProfileDropdown) {
-                userProfileDropdown.style.display = 'block';
-                userProfileDropdown.classList.add('logged-in');
-            }
-            dropdownUserName.textContent = user.displayName || 'Usuario';
-            dropdownUserEmail.textContent = user.email;
-            if (user.photoURL) {
-                userPhoto.src = user.photoURL;
-            }
-            if (btnAdminPanel) {
-                btnAdminPanel.style.display = (user.email === ADMIN_EMAIL) ? 'flex' : 'none';
-            }
-            window.currentUser = user;
-            window.isAdmin = (user.email === ADMIN_EMAIL);
-            console.log('✅ Usuario:', user.email, window.isAdmin ? '(Admin)' : '');
-        } else {
-            if (headerActions) {
-                headerActions.style.display = 'flex';
-                headerActions.classList.remove('hidden');
-            }
-            if (userProfileDropdown) {
-                userProfileDropdown.style.display = 'none';
-                userProfileDropdown.classList.remove('logged-in');
-            }
-            window.currentUser = null;
-        }
-    }
-    
-    function toggleUserMenu() {
-        const menu = document.getElementById('userDropdownMenu');
-        menu.classList.toggle('active');
-    }
-    
-    function irAdmin() {
-        window.location.href = 'admin.html';
-    }
-    
-    function cerrarSesion() {
-        firebase.auth().signOut().then(() => {
-            window.location.href = 'index.html';
-        }).catch((error) => {
-            console.error('Error:', error);
-        });
-    }
-</script>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="script.js"></script>
