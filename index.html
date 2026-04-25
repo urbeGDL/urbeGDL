@@ -12,7 +12,6 @@
 
 <!-- Firebase Configuration v8 (compatible) -->
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
-<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
 
 <script>
@@ -26,14 +25,11 @@
         databaseURL: "https://urbegdl-9d9f0-default-rtdb.firebaseio.com"
     };
 
-    const ADMIN_EMAIL = 'urbegdl@gmail.com';
-    
     // Initialize Firebase v8
     try {
         firebase.initializeApp(firebaseConfig);
         window.firebase = firebase;
         window.db = firebase.database();
-        window.auth = firebase.auth();
         console.log('✅ Firebase v8 configurado!');
     } catch (error) {
         console.error('❌ Error Firebase:', error);
@@ -53,17 +49,13 @@
         </a>
     </div>
     
-    <div class="header-actions" id="headerActions">
-        <a href="login.html" class="header-btn header-btn-outline" id="btnLogin">Iniciar Sesión</a>
-        <a href="unete.html" class="header-btn header-btn-fill" id="btnUnete">Únete</a>
+    <div class="header-actions">
+        <a href="login.html" class="header-btn header-btn-outline">Iniciar Sesión</a>
+        <a href="unete.html" class="header-btn header-btn-fill">Únete</a>
     </div>
     
     <div class="header-right">
-        <div id="userSection" style="display:none;">
-            <span id="userName" class="user-name"></span>
-            <button class="logout-btn" onclick="cerrarSesion()">Cerrar</button>
-        </div>
-        <button class="profile-btn" onclick="goToProfile()" id="profileBtn">
+        <button class="profile-btn" onclick="goToProfile()">
             <img src="imagenes/logo.png" alt="Perfil" class="profile-img">
         </button>
     </div>
@@ -199,44 +191,6 @@
         <button class="modal-submit" onclick="guardarReporte()">📤 Enviar Reporte</button>
     </div>
 </div>
-
-<script>
-    // Auth state listener
-    window.auth.onAuthStateChanged((user) => {
-        console.log('Auth state:', user ? user.email : 'logged out');
-        updateUI(user);
-    });
-    
-    function updateUI(user) {
-        const headerActions = document.getElementById('headerActions');
-        const userSection = document.getElementById('userSection');
-        const userName = document.getElementById('userName');
-        const profileBtn = document.getElementById('profileBtn');
-        
-        if (user) {
-            if (headerActions) headerActions.style.display = 'none';
-            if (userSection) {
-                userSection.style.display = 'flex';
-                userName.textContent = user.displayName || user.email;
-            }
-            if (profileBtn) profileBtn.style.display = 'block';
-            window.currentUser = user;
-            console.log('✅ Usuario:', user.email);
-        } else {
-            if (headerActions) headerActions.style.display = 'flex';
-            if (userSection) userSection.style.display = 'none';
-            window.currentUser = null;
-        }
-    }
-    
-    function cerrarSesion() {
-        firebase.auth().signOut().then(() => {
-            window.location.href = 'index.html';
-        }).catch((error) => {
-            console.error('Error:', error);
-        });
-    }
-</script>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="script.js"></script>
