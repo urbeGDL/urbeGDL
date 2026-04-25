@@ -390,15 +390,21 @@ body {
     max-width: 1600px;
     margin: 0 auto;
     padding: 20px;
+    z-index: 40;
+    position: relative;
 }
 
 .content-section {
     display: none;
+    z-index: 30;
+    position: relative;
 }
 
 .content-section.active {
     display: block;
     animation: fadeIn 0.3s ease;
+    z-index: 30;
+    position: relative;
 }
 
 @keyframes fadeIn {
@@ -991,6 +997,12 @@ body {
     
     .header-right {
         display: flex;
+        z-index: 100;
+        position: relative;
+    }
+    
+    .header-actions {
+        display: none;
     }
     
     .profile-img {
@@ -1003,6 +1015,8 @@ body {
     
     .search-container {
         padding: 0 14px 10px;
+        z-index: 60;
+        position: relative;
     }
     
     .search-bar {
@@ -1011,11 +1025,15 @@ body {
     
     .nav-tabs {
         padding: 8px 14px;
+        z-index: 80;
+        position: relative;
     }
     
     .nav-tab {
         padding: 8px 14px;
         font-size: 0.85rem;
+        z-index: 85;
+        position: relative;
     }
     
     .main-content {
@@ -1103,6 +1121,8 @@ body {
         display: flex;
         align-items: center;
         justify-content: center;
+        z-index: 150;
+        position: relative;
     }
     
     .bottom-tabs {

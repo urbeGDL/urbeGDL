@@ -62,6 +62,7 @@
         };
         
         firebase.initializeApp(firebaseConfig);
+        window.auth = firebase.auth();
         
         function showError(msg) {
             const el = document.getElementById('registerError');
@@ -86,6 +87,11 @@
             const confirmPassword = document.getElementById('confirmPassword').value;
             const btn = document.getElementById('btnRegister');
             
+            if (!nombre || !email || !password || !confirmPassword) {
+                showError('Por favor completa todos los campos');
+                return;
+            }
+            
             if (password !== confirmPassword) {
                 showError('Las contraseñas no coinciden');
                 return;
@@ -103,19 +109,26 @@
                 .then((userCredential) => {
                     const user = userCredential.user;
                     
-                    user.updateProfile({ displayName: nombre }).then(() => {
-                        firebase.database().ref('usuarios/' + user.uid).set({
+                    return user.updateProfile({ displayName: nombre }).then(() => {
+                        return firebase.database().ref('usuarios/' + user.uid).set({
                             nombre: nombre,
                             email: email,
                             fechaRegistro: new Date().toLocaleString('es-MX')
-                        }).then(() => {
-                            showSuccess('✅ ¡Registro exitoso! Redireccionando...');
-                            setTimeout(() => window.location.href = 'index.html', 1500);
                         });
                     });
                 })
+                .then(() => {
+                    showSuccess('✅ ¡Registro exitoso! Redireccionando...');
+                    setTimeout(() => window.location.href = 'index.html', 1500);
+                })
                 .catch((error) => {
-                    showError('Error: ' + error.message);
+                    console.error('Register error:', error);
+                    let msg = error.message;
+                    if (msg.includes('email-already-in-use')) msg = 'Este correo ya está registrado';
+                    else if (msg.includes('invalid-email')) msg = 'Correo inválido';
+                    else if (msg.includes('weak-password')) msg = 'Contraseña muy débil';
+                    else if (msg.includes('network')) msg = 'Error de conexión. Intenta de nuevo';
+                    showError(msg);
                     btn.disabled = false;
                     btn.textContent = 'Registrarse';
                 });
