@@ -5,14 +5,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#1a2a6c">
     <title>UrbeGDL - Reportes Ciudadanos</title>
-    <link rel="stylesheet" href="styles.css?v=6">
+    <link rel="stylesheet" href="styles.css?v=7">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 </head>
 <body>
 
-<!-- Firebase Configuration -->
-<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database.js"></script>
+<!-- Firebase Configuration v8 (compatible) -->
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
 
 <script>
     const firebaseConfig = {
@@ -25,22 +25,15 @@
         databaseURL: "https://urbegdl-9d9f0-default-rtdb.firebaseio.com"
     };
 
-    // Initialize Firebase - VERSIÓN SIMPLIFICADA
-    let db = null;
+    // Initialize Firebase v8
     try {
-        const app = firebase.initializeApp(firebaseConfig);
-        db = firebase.database(app);
-        window.firebaseDB = db;
-        window.firebaseRef = firebase.database.ref;
-        window.firebaseSet = firebase.database.set;
-        window.firebasePush = firebase.database.ref;
-        window.firebaseOnValue = firebase.database.onValue;
-        window.firebaseRemove = firebase.database.remove;
-        console.log('✅ Firebase configurado!');
+        firebase.initializeApp(firebaseConfig);
+        window.firebase = firebase;
+        window.db = firebase.database();
+        console.log('✅ Firebase v8 configurado!');
     } catch (error) {
         console.error('❌ Error Firebase:', error);
     }
-</script>
 </script>
 
 <!-- Header -->
