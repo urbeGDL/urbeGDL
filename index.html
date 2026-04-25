@@ -104,7 +104,7 @@
 <main class="main-content">
     
     <!-- Reportes Section -->
-    <section id="section-reportes" class="content-section">
+    <section id="section-reportes" class="content-section active">
         <div class="section-header">
             <h2>Reportes Recientes</h2>
         </div>
@@ -112,7 +112,7 @@
     </section>
     
     <!-- Conócenos Section -->
-    <section id="section-conocenos" class="content-section active">
+    <section id="section-conocenos" class="content-section">
         <div class="conocenos-hero">
             <h2>¿Qué es UrbeGDL?</h2>
             <p class="hero-text">UrbeGDL es una iniciativa tecnológica nacida en el corazón de Guadalajara. Nuestra plataforma surge como una respuesta a la necesidad de conectar a los ciudadanos con el entorno urbano, utilizando la tecnología para dar voz a quienes viven y transitan por nuestras calles.</p>
@@ -135,7 +135,7 @@
 </main>
 
 <!-- FAB (Mobile) -->
-<button class="fab-btn" onclick="openReportModal()">+</button>
+<button class="fab-btn" id="fabBtn" onclick="openReportModal()">+</button>
 
 <!-- Bottom Tab Bar (Mobile) -->
 <nav class="bottom-tabs">
@@ -227,24 +227,34 @@
         const ADMIN_EMAIL = 'urbegdl@gmail.com';
         
         if (user) {
-            if (headerActions) headerActions.style.display = 'none';
+            if (headerActions) {
+                headerActions.style.display = 'none';
+                headerActions.classList.add('hidden');
+            }
             if (userProfileDropdown) {
                 userProfileDropdown.style.display = 'block';
-                dropdownUserName.textContent = user.displayName || 'Usuario';
-                dropdownUserEmail.textContent = user.email;
-                if (user.photoURL) {
-                    userPhoto.src = user.photoURL;
-                }
-                if (btnAdminPanel) {
-                    btnAdminPanel.style.display = (user.email === ADMIN_EMAIL) ? 'flex' : 'none';
-                }
+                userProfileDropdown.classList.add('logged-in');
+            }
+            dropdownUserName.textContent = user.displayName || 'Usuario';
+            dropdownUserEmail.textContent = user.email;
+            if (user.photoURL) {
+                userPhoto.src = user.photoURL;
+            }
+            if (btnAdminPanel) {
+                btnAdminPanel.style.display = (user.email === ADMIN_EMAIL) ? 'flex' : 'none';
             }
             window.currentUser = user;
             window.isAdmin = (user.email === ADMIN_EMAIL);
             console.log('✅ Usuario:', user.email, window.isAdmin ? '(Admin)' : '');
         } else {
-            if (headerActions) headerActions.style.display = 'flex';
-            if (userProfileDropdown) userProfileDropdown.style.display = 'none';
+            if (headerActions) {
+                headerActions.style.display = 'flex';
+                headerActions.classList.remove('hidden');
+            }
+            if (userProfileDropdown) {
+                userProfileDropdown.style.display = 'none';
+                userProfileDropdown.classList.remove('logged-in');
+            }
             window.currentUser = null;
         }
     }

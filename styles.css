@@ -644,6 +644,12 @@ body {
     transform: scale(0.95);
 }
 
+.fab-btn.shown {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
 /* ========================================
    BOTTOM TABS (Mobile)
    ======================================== */
@@ -1166,15 +1172,33 @@ body {
    DESKTOP (>900px) - Hide Mobile Elements
    ======================================== */
 @media (min-width: 901px) {
-    .fab-btn, .bottom-tabs, .menu-btn, .header-right {
+    .fab-btn, .bottom-tabs, .menu-btn {
         display: none !important;
+    }
+    
+    .header-right {
+        display: none !important;
+    }
+    
+    .header-right.logged-in {
+        display: flex !important;
     }
     
     .header-actions {
         display: flex !important;
     }
     
+    .header-actions.hidden {
+        display: none !important;
+    }
+    
     body {
         padding-bottom: 20px;
+    }
+    
+    .fab-btn.desktop-visible {
+        display: flex !important;
+        align-items: center;
+        justify-content: center;
     }
 }
