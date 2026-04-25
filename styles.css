@@ -128,6 +128,97 @@ body {
     transform: scale(0.95);
 }
 
+.user-profile-dropdown {
+    position: relative;
+    display: none;
+}
+
+.profile-circle {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    border: 2px solid var(--bright-green);
+    overflow: hidden;
+    cursor: pointer;
+    padding: 0;
+    background: var(--white);
+    transition: transform 0.2s;
+}
+
+.profile-circle:hover {
+    transform: scale(1.1);
+}
+
+.profile-circle:active {
+    transform: scale(0.95);
+}
+
+.profile-photo-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.user-dropdown-menu {
+    display: none;
+    position: absolute;
+    top: 50px;
+    right: 0;
+    background: var(--white);
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+    min-width: 200px;
+    z-index: 200;
+    overflow: hidden;
+}
+
+.user-dropdown-menu.active {
+    display: block;
+}
+
+.dropdown-user-info {
+    padding: 16px;
+    border-bottom: 1px solid var(--medium-gray);
+    background: var(--primary-blue);
+}
+
+.dropdown-user-name {
+    display: block;
+    color: var(--white);
+    font-weight: 600;
+    font-size: 0.95rem;
+}
+
+.dropdown-user-email {
+    display: block;
+    color: rgba(255,255,255,0.7);
+    font-size: 0.8rem;
+    margin-top: 2px;
+}
+
+.dropdown-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    padding: 14px 16px;
+    border: none;
+    background: none;
+    cursor: pointer;
+    font-size: 0.9rem;
+    color: var(--dark-gray);
+}
+
+.dropdown-item.admin-only {
+    background: linear-gradient(135deg, var(--primary-blue) 0%, var(--primary-blue-light) 100%);
+    color: white;
+    font-weight: 600;
+}
+
+.dropdown-item:hover {
+    background: var(--light-gray);
+}
+
 .menu-btn {
     font-size: 1.5rem;
 }
@@ -534,7 +625,7 @@ body {
     font-weight: 300;
     box-shadow: 0 4px 20px rgba(46, 204, 113, 0.4);
     cursor: pointer;
-    z-index: 90;
+    z-index: 150;
     transition: all 0.2s;
 }
 
@@ -607,7 +698,7 @@ body {
     left: 0;
     right: 0;
     bottom: 0;
-    z-index: 200;
+    z-index: 250;
 }
 
 .slide-menu.active {
@@ -690,7 +781,7 @@ body {
     right: 0;
     bottom: 0;
     background: rgba(0, 0, 0, 0.5);
-    z-index: 300;
+    z-index: 500;
     align-items: center;
     justify-content: center;
     padding: 20px;
@@ -851,6 +942,7 @@ body {
 @media (max-width: 600px) {
     .main-header {
         padding: 10px 14px;
+        z-index: 100;
     }
     
     .logo-title {
@@ -861,6 +953,21 @@ body {
         display: block;
         width: 28px;
         height: 28px;
+    }
+    
+    .user-profile-dropdown {
+        display: block;
+    }
+    
+    .profile-circle {
+        width: 34px;
+        height: 34px;
+    }
+    
+    .user-dropdown-menu {
+        top: 45px;
+        right: 5px;
+        min-width: 180px;
     }
     
     .header-actions {
