@@ -1,5 +1,5 @@
 // ========================================
-// UrbeGDL - Firebase Version
+// UrbeGDL - Firebase Version v2
 // ========================================
 
 let mapModal, markerModal;
@@ -7,6 +7,7 @@ let currentImage = null;
 
 // ======== INIT ========
 document.addEventListener('DOMContentLoaded', function() {
+    console.log('📱 Iniciando UrbeGDL...');
     initModalMap();
     escucharReportesFirebase();
 });
@@ -102,8 +103,10 @@ function initModalMap() {
 
 // ======== MODAL FUNCTIONS ========
 function openReportModal(e) {
-    if (e) e.preventDefault();
-    if (e) e.stopPropagation();
+    if (e) {
+        e.preventDefault();
+        e.stopPropagation();
+    }
     
     const modal = document.getElementById('reportModal');
     if (modal) {
@@ -127,11 +130,21 @@ function handleImageUpload() {
     
     if (input && input.files && input.files[0]) {
         const file = input.files[0];
+        
+        // Verify file size (max 5MB for Firebase)
+        if (file.size > 5 * 1024 * 1024) {
+            alert('La imagen es muy grande. Máximo 5MB. Por favor selecciona otra.');
+            return;
+        }
+        
         const reader = new FileReader();
         reader.onload = function(e) {
             currentImage = e.target.result;
             text.textContent = '✓ Foto seleccionada';
             text.style.color = 'var(--bright-green)';
+        };
+        reader.onerror = function() {
+            alert('Error al leer la imagen. Intenta con otra.');
         };
         reader.readAsDataURL(file);
     }
@@ -139,6 +152,8 @@ function handleImageUpload() {
 
 // ======== GUARDAR REPORTE (FIREBASE) ========
 function guardarReporte() {
+    console.log('📤 Intentando guardar reporte...');
+    
     const descripcion = document.getElementById('reportDescripcion').value.trim();
     const ubicacion = document.getElementById('reportUbicacion').value;
     
@@ -152,61 +167,88 @@ function guardarReporte() {
         return;
     }
     
-    const { db, ref, push } = window.firebaseDB;
-    if (!db) {
-        alert('Error de conexión. Intenta de nuevo.');
+    // Verify Firebase is initialized
+    if (!window.firebaseDB || !window.firebaseDB.db) {
+        alert('Error de conexión. Intenta de nuevo en unos segundos.');
+        console.error('❌ Firebase no inicializado');
         return;
     }
     
-    const reportesRef = ref(db, 'reportes');
-    const nuevoReporte = push(reportesRef);
+    const { db, ref, set, push } = window.firebaseDB;
     
-    set(nuevoReporte, {
-        descripcion: descripcion,
-        ubicacion: ubicacion,
-        fecha: new Date().toLocaleString('es-MX'),
-        imagen: currentImage,
-        timestamp: Date.now()
-    }).then(() => {
-        // Reset form
-        document.getElementById('reportDescripcion').value = '';
-        document.getElementById('reportUbicacion').value = '';
-        document.getElementById('ubicacionPreview').textContent = '';
-        document.getElementById('uploadText').textContent = 'Añadir foto';
-        document.getElementById('uploadText').style.color = '';
-        document.getElementById('reportImage').value = '';
-        currentImage = null;
+    try {
+        const reportesRef = ref(db, 'reportes');
+        const nuevoReporte = push(reportesRef);
         
-        if (markerModal) {
-            mapModal.removeLayer(markerModal);
-            markerModal = null;
-        }
+        const reporteData = {
+            descripcion: descripcion,
+            ubicacion: ubicacion,
+            fecha: new Date().toLocaleString('es-MX'),
+            imagen: currentImage || null,
+            timestamp: Date.now()
+        };
         
-        closeReportModal();
-    }).catch((error) => {
-        console.error('Error guardando:', error);
+        console.log('📝 Guardando:', reporteData);
+        
+        set(nuevoReporte, reporteData)
+            .then(() => {
+                console.log('✅ Reporte guardado exitosamente!');
+                
+                // Reset form
+                document.getElementById('reportDescripcion').value = '';
+                document.getElementById('reportUbicacion').value = '';
+                document.getElementById('ubicacionPreview').textContent = '';
+                document.getElementById('uploadText').textContent = 'Añadir foto';
+                document.getElementById('uploadText').style.color = '';
+                document.getElementById('reportImage').value = '';
+                currentImage = null;
+                
+                if (markerModal) {
+                    mapModal.removeLayer(markerModal);
+                    markerModal = null;
+                }
+                
+                closeReportModal();
+                alert('✅ Reporte enviado correctamente!');
+            })
+            .catch((error) => {
+                console.error('❌ Error guardando:', error);
+                alert('Error al guardar reporte. Intenta de nuevo.');
+            });
+            
+    } catch (error) {
+        console.error('❌ Error:', error);
         alert('Error al guardar reporte. Intenta de nuevo.');
-    });
+    }
 }
 
-// ======== ESCuchar REPORTES (FIREBASE) ========
+// ======== ESCUCHAR REPORTES (FIREBASE) ========
 function escucharReportesFirebase() {
     const grid = document.getElementById('reportesGrid');
     if (!grid) return;
     
-    const { db, ref, onValue } = window.firebaseDB;
-    if (!db) {
+    if (!window.firebaseDB || !window.firebaseDB.db) {
+        console.warn('⏳ Firebase no listo, esperando...');
         grid.innerHTML = '<p style="grid-column:1/-1;text-align:center;color:#999;padding:40px;">Conectando a Firebase...</p>';
+        
+        // Reintentar en 2 segundos
+        setTimeout(escucharReportesFirebase, 2000);
         return;
     }
     
+    const { db, ref, onValue } = window.firebaseDB;
+    
     const reportesRef = ref(db, 'reportes');
     
+    console.log('👂 Esperando reportes de Firebase...');
+    
     onValue(reportesRef, (snapshot) => {
+        console.log('📥 Datos recibidos de Firebase');
         grid.innerHTML = '';
         
         const data = snapshot.val();
         if (!data) {
+            console.log('📭 No hay reportes');
             grid.innerHTML = '<p style="grid-column:1/-1;text-align:center;color:#999;padding:40px;">No hay reportes aún. ¡Sé el primero en reportar!</p>';
             return;
         }
@@ -214,7 +256,9 @@ function escucharReportesFirebase() {
         // Convert to array and sort by timestamp (newest first)
         const reportes = Object.entries(data)
             .map(([key, value]) => ({ id: key, ...value }))
-            .sort((a, b) => b.timestamp - a.timestamp);
+            .sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+        
+        console.log(`📋 ${reportes.length} reportes encontrados`);
         
         reportes.forEach(reporte => {
             const card = document.createElement('div');
@@ -223,7 +267,7 @@ function escucharReportesFirebase() {
             card.innerHTML = `
                 <button class="report-delete-btn" onclick="eliminarReporte('${reporte.id}')">×</button>
                 ${reporte.imagen 
-                    ? `<img src="${reporte.imagen}" class="report-image" alt="Reporte">` 
+                    ? `<img src="${reporte.imagen}" class="report-image" alt="Reporte" onerror="this.src='imagenes/noimagen.png'">` 
                     : `<img src="imagenes/noimagen.png" class="report-image" alt="Sin imagen">`}
                 <div class="report-overlay">
                     <p class="report-overlay-text">${reporte.descripcion}</p>
@@ -238,7 +282,7 @@ function escucharReportesFirebase() {
             grid.appendChild(card);
         });
     }, (error) => {
-        console.error('Error obteniendo reportes:', error);
+        console.error('❌ Error obteniendo reportes:', error);
         grid.innerHTML = '<p style="grid-column:1/-1;text-align:center;color:#e74c3c;padding:40px;">Error al cargar reportes</p>';
     });
 }
@@ -247,14 +291,19 @@ function escucharReportesFirebase() {
 function eliminarReporte(id) {
     if (!confirm('¿Eliminar este reporte?')) return;
     
+    if (!window.firebaseDB || !window.firebaseDB.db) return;
+    
     const { db, ref, remove } = window.firebaseDB;
-    if (!db) return;
     
     const reporteRef = ref(db, 'reportes/' + id);
-    remove(reporteRef).catch((error) => {
-        console.error('Error eliminando:', error);
-        alert('Error al eliminar reporte');
-    });
+    remove(reporteRef)
+        .then(() => {
+            console.log('✅ Reporte eliminado');
+        })
+        .catch((error) => {
+            console.error('❌ Error eliminando:', error);
+            alert('Error al eliminar reporte');
+        });
 }
 
 // ======== FILTRAR REPORTES ========

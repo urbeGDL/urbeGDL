@@ -5,17 +5,16 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#1a2a6c">
     <title>UrbeGDL - Reportes Ciudadanos</title>
-    <link rel="stylesheet" href="styles.css?v=3">
+    <link rel="stylesheet" href="styles.css?v=4">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 </head>
 <body>
 
 <!-- Firebase Configuration -->
-<script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-    import { getDatabase, ref, push, onValue, remove, set } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database.js"></script>
 
+<script>
     const firebaseConfig = {
         apiKey: "AIzaSyC5hGd8vsY60T0BAuq8RAIx5TpzWNbXThk",
         authDomain: "urbegdl-9d9f0.firebaseapp.com",
@@ -27,11 +26,23 @@
     };
 
     // Initialize Firebase
-    const app = initializeApp(firebaseConfig);
-    const db = getDatabase(app);
-
-    // Export for use in script.js
-    window.firebaseDB = { db, ref, push, onValue, remove, set };
+    try {
+        const app = firebase.initializeApp(firebaseConfig);
+        const db = firebase.database(app);
+        
+        // Export globally
+        window.firebaseDB = { 
+            db: db, 
+            ref: firebase.database.ref, 
+            push: firebase.database.ref, 
+            onValue: firebase.database.onValue, 
+            remove: firebase.database.remove, 
+            set: firebase.database.set 
+        };
+        console.log('✅ Firebase inicializado correctamente');
+    } catch (error) {
+        console.error('❌ Error inicializando Firebase:', error);
+    }
 </script>
 
 <!-- Header -->
@@ -95,20 +106,20 @@
     <section id="section-conocenos" class="content-section active">
         <div class="conocenos-hero">
             <h2>¿Qué es UrbeGDL?</h2>
-            <p class="hero-text">UrbeGDL es una iniciativa tecnológica nacida en el corazón de Guadalajara. Nuestra plataforma surge como una respuesta a la necesidad de conectar a los ciudadanos con el entorno urbano, utilizando la tecnología para dar voz a quienes viven y transitan por nuestras calles. Creemos que una ciudad inteligente no es la que tiene más tecnología, sino la que sabe escuchar a su gente.</p>
+            <p class="hero-text">UrbeGDL es una iniciativa tecnológica nacida en el corazón de Guadalajara. Nuestra plataforma surge como una respuesta a la necesidad de conectar a los ciudadanos con el entorno urbano, utilizando la tecnología para dar voz a quienes viven y transitan por nuestras calles.</p>
         </div>
         
         <div class="conocenos-cards">
             <div class="mision-card">
                 <div class="card-icon">🎯</div>
                 <h3>Misión</h3>
-                <p>Facilitar a los habitantes de la Zona Metropolitana de Guadalajara una herramienta digital directa y eficiente para el reporte de incidencias en la infraestructura pública. Buscamos fomentar la participación ciudadana activa, transformando la preocupación individual en una acción comunitaria que impulse la mejora de nuestra ciudad.</p>
+                <p>Facilitar a los habitantes de la Zona Metropolitana de Guadalajara una herramienta digital directa y eficiente para el reporte de incidencias en la infraestructura pública.</p>
             </div>
             
             <div class="vision-card">
                 <div class="card-icon">👁️</div>
                 <h3>Visión</h3>
-                <p>Consolidarnos como la plataforma ciudadana de referencia en Jalisco para la gestión y visibilización de reportes urbanos. Aspiramos a ser un puente tecnológico que promueva la transparencia y la rapidez en la solución de problemas públicos, contribuyendo a una Guadalajara más organizada, segura y habitable para el año 2030.</p>
+                <p>Consolidarnos como la plataforma ciudadana de referencia en Jalisco para la gestión de reportes urbanos, contribuyendo a una ciudad más organizada y segura.</p>
             </div>
         </div>
     </section>
