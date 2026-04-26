@@ -10,36 +10,77 @@ document.addEventListener('DOMContentLoaded', function() {
     console.log('📱 Iniciando UrbeGDL...');
     initModalMap();
     cargarReportes();
+    
+    // Initialize - show conocenos by default, hide reportes
+    var reportesSection = document.getElementById('section-reportes');
+    var conocenosSection = document.getElementById('section-conocenos');
+    var tabReportes = document.getElementById('tab-reportes');
+    var tabConocenos = document.getElementById('tab-conocenos');
+    var fabBtn = document.getElementById('fabBtn');
+    
+    if (reportesSection) reportesSection.classList.add('hidden');
+    if (conocenosSection) conocenosSection.classList.remove('hidden');
+    if (tabReportes) tabReportes.classList.remove('active');
+    if (tabConocenos) tabConocenos.classList.add('active');
+    if (fabBtn) fabBtn.classList.remove('visible');
+    
+    console.log('✅ Funciones de navegación cargadas');
 });
 
 // ======== NAVIGATION ========
-function showSection(sectionName) {
-    console.log('📱 showSection:', sectionName);
-    const fabBtn = document.getElementById('fabBtn');
+function mostrarReportesInline() {
+    console.log('📋 Mostrando Reportes');
+    var reportesSection = document.getElementById('section-reportes');
+    var conocenosSection = document.getElementById('section-conocenos');
+    var tabReportes = document.getElementById('tab-reportes');
+    var tabConocenos = document.getElementById('tab-conocenos');
+    var fabBtn = document.getElementById('fabBtn');
     
-    document.querySelectorAll('.nav-tab').forEach(tab => {
-        tab.classList.toggle('active', tab.dataset.section === sectionName);
-    });
-    document.querySelectorAll('.tab-btn').forEach(btn => {
-        btn.classList.toggle('active', btn.dataset.section === sectionName);
-    });
-    document.querySelectorAll('.content-section').forEach(section => {
-        section.classList.toggle('active', section.id === 'section-' + sectionName);
-    });
-    document.getElementById('slideMenu')?.classList.remove('active');
-    
-    if (fabBtn) {
-        if (sectionName === 'reportes') {
-            fabBtn.classList.add('visible');
-            console.log('FAB visible');
-        } else {
-            fabBtn.classList.remove('visible');
-            console.log('FAB hidden');
-        }
-    }
+    if (reportesSection) reportesSection.classList.remove('hidden');
+    if (conocenosSection) conocenosSection.classList.add('hidden');
+    if (tabReportes) tabReportes.classList.add('active');
+    if (tabConocenos) tabConocenos.classList.remove('active');
+    if (fabBtn) fabBtn.classList.add('visible');
     
     window.scrollTo({ top: 0, behavior: 'smooth' });
 }
+
+function mostrarConocenosInline() {
+    console.log('ℹ️ Mostrando Conócenos');
+    var reportesSection = document.getElementById('section-reportes');
+    var conocenosSection = document.getElementById('section-conocenos');
+    var tabReportes = document.getElementById('tab-reportes');
+    var tabConocenos = document.getElementById('tab-conocenos');
+    var fabBtn = document.getElementById('fabBtn');
+    
+    if (reportesSection) reportesSection.classList.add('hidden');
+    if (conocenosSection) conocenosSection.classList.remove('hidden');
+    if (tabConocenos) tabConocenos.classList.add('active');
+    if (tabReportes) tabReportes.classList.remove('active');
+    if (fabBtn) fabBtn.classList.remove('visible');
+    
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+window.mostrarReportes = mostrarReportesInline;
+window.mostrarConocenos = mostrarConocenosInline;
+window.mostrarReportesInline = mostrarReportesInline;
+window.mostrarConocenosInline = mostrarConocenosInline;
+
+function showSection(sectionName) {
+    console.log('📱 showSection:', sectionName);
+    if (sectionName === 'reportes') {
+        mostrarReportes();
+    } else if (sectionName === 'conocenos') {
+        mostrarConocenos();
+    }
+}
+
+// Initialize - hide reportes initially
+document.addEventListener('DOMContentLoaded', function() {
+    const reportesSection = document.getElementById('section-reportes');
+    if (reportesSection) reportesSection.style.display = 'none';
+});
 
 function toggleSlideMenu() {
     document.getElementById('slideMenu')?.classList.toggle('active');
@@ -126,8 +167,9 @@ function handleImageUpload() {
         const reader = new FileReader();
         reader.onload = function(e) {
             currentImage = e.target.result;
-            text.textContent = '✓ Foto seleccionada';
+            text.textContent = '✓ Imagen subida';
             text.style.color = 'var(--bright-green)';
+            alert('✓ Imagen subida correctamente');
         };
         reader.readAsDataURL(file);
     }
