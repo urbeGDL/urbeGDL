@@ -10,77 +10,22 @@ document.addEventListener('DOMContentLoaded', function() {
     console.log('📱 Iniciando UrbeGDL...');
     initModalMap();
     cargarReportes();
-    
-    // Initialize - show conocenos by default, hide reportes
-    var reportesSection = document.getElementById('section-reportes');
-    var conocenosSection = document.getElementById('section-conocenos');
-    var tabReportes = document.getElementById('tab-reportes');
-    var tabConocenos = document.getElementById('tab-conocenos');
-    var fabBtn = document.getElementById('fabBtn');
-    
-    if (reportesSection) reportesSection.classList.add('hidden');
-    if (conocenosSection) conocenosSection.classList.remove('hidden');
-    if (tabReportes) tabReportes.classList.remove('active');
-    if (tabConocenos) tabConocenos.classList.add('active');
-    if (fabBtn) fabBtn.classList.remove('visible');
-    
-    console.log('✅ Funciones de navegación cargadas');
 });
 
 // ======== NAVIGATION ========
-function mostrarReportesInline() {
-    console.log('📋 Mostrando Reportes');
-    var reportesSection = document.getElementById('section-reportes');
-    var conocenosSection = document.getElementById('section-conocenos');
-    var tabReportes = document.getElementById('tab-reportes');
-    var tabConocenos = document.getElementById('tab-conocenos');
-    var fabBtn = document.getElementById('fabBtn');
-    
-    if (reportesSection) reportesSection.classList.remove('hidden');
-    if (conocenosSection) conocenosSection.classList.add('hidden');
-    if (tabReportes) tabReportes.classList.add('active');
-    if (tabConocenos) tabConocenos.classList.remove('active');
-    if (fabBtn) fabBtn.classList.add('visible');
-    
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-}
-
-function mostrarConocenosInline() {
-    console.log('ℹ️ Mostrando Conócenos');
-    var reportesSection = document.getElementById('section-reportes');
-    var conocenosSection = document.getElementById('section-conocenos');
-    var tabReportes = document.getElementById('tab-reportes');
-    var tabConocenos = document.getElementById('tab-conocenos');
-    var fabBtn = document.getElementById('fabBtn');
-    
-    if (reportesSection) reportesSection.classList.add('hidden');
-    if (conocenosSection) conocenosSection.classList.remove('hidden');
-    if (tabConocenos) tabConocenos.classList.add('active');
-    if (tabReportes) tabReportes.classList.remove('active');
-    if (fabBtn) fabBtn.classList.remove('visible');
-    
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-}
-
-window.mostrarReportes = mostrarReportesInline;
-window.mostrarConocenos = mostrarConocenosInline;
-window.mostrarReportesInline = mostrarReportesInline;
-window.mostrarConocenosInline = mostrarConocenosInline;
-
 function showSection(sectionName) {
-    console.log('📱 showSection:', sectionName);
-    if (sectionName === 'reportes') {
-        mostrarReportes();
-    } else if (sectionName === 'conocenos') {
-        mostrarConocenos();
-    }
+    document.querySelectorAll('.nav-tab').forEach(tab => {
+        tab.classList.toggle('active', tab.dataset.section === sectionName);
+    });
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.section === sectionName);
+    });
+    document.querySelectorAll('.content-section').forEach(section => {
+        section.classList.toggle('active', section.id === 'section-' + sectionName);
+    });
+    document.getElementById('slideMenu')?.classList.remove('active');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
 }
-
-// Initialize - hide reportes initially
-document.addEventListener('DOMContentLoaded', function() {
-    const reportesSection = document.getElementById('section-reportes');
-    if (reportesSection) reportesSection.style.display = 'none';
-});
 
 function toggleSlideMenu() {
     document.getElementById('slideMenu')?.classList.toggle('active');
@@ -134,13 +79,10 @@ function initModalMap() {
 
 // ======== MODAL FUNCTIONS ========
 function openReportModal(e) {
-    console.log('🔵 openReportModal called');
     if (e) { e.preventDefault(); e.stopPropagation(); }
     const modal = document.getElementById('reportModal');
-    console.log('Modal element:', modal);
     if (modal) {
         modal.classList.add('active');
-        console.log('Modal should be visible now');
         setTimeout(() => {
             document.getElementById('reportDescripcion')?.focus();
             if (mapModal) mapModal.invalidateSize();
@@ -167,9 +109,8 @@ function handleImageUpload() {
         const reader = new FileReader();
         reader.onload = function(e) {
             currentImage = e.target.result;
-            text.textContent = '✓ Imagen subida';
+            text.textContent = '✓ Foto seleccionada';
             text.style.color = 'var(--bright-green)';
-            alert('✓ Imagen subida correctamente');
         };
         reader.readAsDataURL(file);
     }
@@ -179,13 +120,6 @@ function handleImageUpload() {
 function guardarReporte() {
     console.log('📤 Guardando reporte...');
     
-    const user = window.currentUser || firebase.auth().currentUser;
-    if (!user) {
-        alert('Debes iniciar sesión para crear reportes');
-        window.location.href = 'login.html';
-        return;
-    }
-    
     const descripcion = document.getElementById('reportDescripcion').value.trim();
     const ubicacion = document.getElementById('reportUbicacion').value;
     
@@ -193,44 +127,6 @@ function guardarReporte() {
         alert('Mínimo 10 caracteres');
         return;
     }
-    if (!ubicacion) {
-        alert('Selecciona una ubicación');
-        return;
-    }
-    
-    if (!window.db) {
-        alert('Error de conexión. Recarga la página.');
-        return;
-    }
-    
-    // Firebase v8 syntax - guardar con userId
-    const reportesRef = window.db.ref('reportes');
-    reportesRef.push({
-        userId: user.uid,
-        userEmail: user.email,
-        userName: user.displayName || user.email,
-        descripcion: descripcion,
-        ubicacion: ubicacion,
-        fecha: new Date().toLocaleString('es-MX'),
-        imagen: currentImage || null,
-        timestamp: firebase.database.ServerValue.TIMESTAMP
-    }).then(() => {
-        console.log('✅ Reporte guardado!');
-        document.getElementById('reportDescripcion').value = '';
-        document.getElementById('reportUbicacion').value = '';
-        document.getElementById('ubicacionPreview').textContent = '';
-        document.getElementById('uploadText').textContent = 'Añadir foto';
-        document.getElementById('uploadText').style.color = '';
-        document.getElementById('reportImage').value = '';
-        currentImage = null;
-        if (markerModal) { mapModal.removeLayer(markerModal); markerModal = null; }
-        closeReportModal();
-        alert('✅ Reporte enviado correctamente!');
-    }).catch((error) => {
-        console.error('❌ Error:', error);
-        alert('Error al guardar reporte.');
-    });
-}
     if (!ubicacion) {
         alert('Selecciona una ubicación');
         return;
@@ -265,7 +161,7 @@ function guardarReporte() {
         console.error('❌ Error:', error);
         alert('Error al guardar reporte.');
     });
-
+}
 
 // ======== CARGAR REPORTES (FIREBASE v8) ========
 function cargarReportes() {
@@ -334,54 +230,12 @@ function cargarReportes() {
 
 // ======== ELIMINAR REPORTE ========
 function eliminarReporte(id) {
-    const user = window.currentUser || firebase.auth().currentUser;
-    const ADMIN_EMAIL = 'urbegdl@gmail.com';
+    if (!confirm('¿Eliminar este reporte?')) return;
+    if (!window.db) return;
     
-    if (!user) {
-        alert('Debes iniciar sesión para eliminar reportes');
-        return;
-    }
-    
-    if (!window.db) {
-        alert('Error de conexión');
-        return;
-    }
-    
-    // Get reporte first to check ownership
-    window.db.ref('reportes/' + id).once('value')
-        .then((snapshot) => {
-            const reporte = snapshot.val();
-            if (!reporte) {
-                alert('Reporte no encontrado');
-                return;
-            }
-            
-            const isOwner = reporte.userId === user.uid;
-            const isAdmin = user.email === ADMIN_EMAIL;
-            
-            console.log('Eliminar check - userId:', user.uid, 'reporteUserId:', reporte.userId, 'isOwner:', isOwner, 'isAdmin:', isAdmin);
-            
-            if (!isOwner && !isAdmin) {
-                alert('Solo puedes eliminar tus propios reportes');
-                return;
-            }
-            
-            if (!confirm('¿Eliminar este reporte?')) return;
-            
-            window.db.ref('reportes/' + id).remove()
-                .then(() => {
-                    console.log('✅ Eliminado');
-                    alert('Reporte eliminado');
-                })
-                .catch((error) => {
-                    console.error('❌ Error:', error);
-                    alert('Error al eliminar');
-                });
-        })
-        .catch((error) => {
-            console.error('❌ Error:', error);
-            alert('Error al verificar reporte');
-        });
+    window.db.ref('reportes/' + id).remove()
+        .then(() => console.log('✅ Eliminado'))
+        .catch((error) => console.error('❌ Error:', error));
 }
 
 // ======== FILTRAR ========
