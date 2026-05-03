@@ -13,6 +13,7 @@
 <!-- Firebase Configuration v8 (compatible) -->
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
 
 <script>
     const firebaseConfig = {
@@ -49,15 +50,19 @@
         </a>
     </div>
     
-    <div class="header-actions">
-        <a href="login.html" class="header-btn header-btn-outline">Iniciar Sesión</a>
-        <a href="unete.html" class="header-btn header-btn-fill">Únete</a>
+    <div class="header-actions" id="headerActions">
+        <a href="login.html" class="header-btn header-btn-outline" id="btnLogin">Iniciar Sesión</a>
+        <a href="unete.html" class="header-btn header-btn-fill" id="btnRegistro">Únete</a>
     </div>
-    
-    <div class="header-right">
-        <button class="profile-btn" onclick="goToProfile()">
-            <img src="imagenes/logo.png" alt="Perfil" class="profile-img">
-        </button>
+
+    <div class="header-right" id="headerUser" style="display:none;">
+        <div class="user-info">
+            <span class="user-name" id="userName"></span>
+            <button class="profile-btn" onclick="goToProfile()">
+                <img id="userPhoto" src="imagenes/logo.png" alt="Perfil" class="profile-img">
+            </button>
+        </div>
+        <button class="logout-btn" onclick="cerrarSesion()">Salir</button>
     </div>
 </header>
 
@@ -151,11 +156,14 @@
             <a href="#" class="menu-item" onclick="toggleSlideMenu(); showSection('reportes');">
                 <span>📋</span> Reportes
             </a>
-            <a href="login.html" class="menu-item">
+            <a href="#" class="menu-item" id="menuLogin" onclick="toggleSlideMenu(); window.location.href='login.html'">
                 <span>🔑</span> Iniciar Sesión
             </a>
-            <a href="unete.html" class="menu-item">
-                <span>📝</span> Únete
+            <a href="#" class="menu-item" id="menuPerfil" style="display:none" onclick="toggleSlideMenu(); window.location.href='login.html'">
+                <span>👤</span> <span id="menuUserName">Perfil</span>
+            </a>
+            <a href="#" class="menu-item" id="menuLogout" style="display:none" onclick="toggleSlideMenu(); cerrarSesion()">
+                <span>🚪</span> Cerrar Sesión
             </a>
             <a href="#" class="menu-item" onclick="toggleSlideMenu(); showSection('conocenos');">
                 <span>ℹ️</span> Conócenos
@@ -189,6 +197,37 @@
         </div>
         
         <button class="modal-submit" onclick="guardarReporte()">📤 Enviar Reporte</button>
+    </div>
+</div>
+
+<!-- Detail Modal (Pinterest Style) -->
+<div class="detail-modal" id="detailModal" onclick="if(event.target === this) closeDetailModal()">
+    <div class="detail-container" onclick="event.stopPropagation()">
+        <button class="modal-close" onclick="closeDetailModal()">×</button>
+        <div class="detail-layout">
+            <div class="detail-image-wrap">
+                <img id="detailImage" src="" alt="Reporte" class="detail-image">
+            </div>
+            <div class="detail-info">
+                <div class="detail-header">
+                    <div class="detail-author" id="detailAuthor">
+                        <img id="detailAuthorPhoto" src="imagenes/logo.png" alt="" class="detail-author-img">
+                        <div>
+                            <p id="detailAuthorName" class="detail-author-name">Usuario</p>
+                            <p id="detailDate" class="detail-date"></p>
+                        </div>
+                    </div>
+                </div>
+                <div class="detail-description">
+                    <h3>Descripción</h3>
+                    <p id="detailDesc"></p>
+                </div>
+                <div class="detail-location">
+                    <h3>Ubicación</h3>
+                    <p id="detailLocation"></p>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 

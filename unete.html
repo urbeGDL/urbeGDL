@@ -6,6 +6,22 @@
     <title>Únete a nuestra causa - UrbeGDL</title>
     <link rel="stylesheet" href="styles.css">
     <link rel="stylesheet" href="unete.css">
+    <!-- Firebase -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyC5hGd8vsY60T0BAuq8RAIx5TpzWNbXThk",
+            authDomain: "urbegdl-9d9f0.firebaseapp.com",
+            projectId: "urbegdl-9d9f0",
+            storageBucket: "urbegdl-9d9f0.firebasestorage.app",
+            messagingSenderId: "698422088985",
+            appId: "1:698422088985:web:7187a9baca0d279a8ca188",
+            databaseURL: "https://urbegdl-9d9f0-default-rtdb.firebaseio.com"
+        };
+        firebase.initializeApp(firebaseConfig);
+    </script>
 </head>
 <body>
     <div class="unete-container">   
@@ -13,6 +29,15 @@
             <img src="imagenes/logo.png" alt="Logo" class="logo-unete">
             <h1>Únete a nuestra causa</h1>
             <p class="subtitle">Colabora con UrbeGDL</p>
+            
+            <button class="btn-google" onclick="loginConGoogle()">
+                <img src="https://upload.wikimedia.org/wikipedia/commons/5/53/Google_%22G%22_Logo.svg" alt="G" class="google-icon">
+                Continuar con Google
+            </button>
+            
+            <div class="divider">
+                <span>o regístrate con email</span>
+            </div>
             
             <form onsubmit="registrarUsuario(event)">
                 <div class="input-group">
@@ -46,5 +71,42 @@
             <p class="back-link"><a href="index.html">← Volver al inicio</a></p>
         </div>
     </div>
+    
+    <script>
+        function loginConGoogle() {
+            const provider = new firebase.auth.GoogleAuthProvider();
+            firebase.auth().signInWithPopup(provider)
+                .then(function(result) {
+                    const user = result.user;
+                    // Guardar datos adicionales en la base de datos
+                    firebase.database().ref('usuarios/' + user.uid).set({
+                        nombre: user.displayName,
+                        email: user.email,
+                        foto: user.photoURL,
+                        fechaRegistro: new Date().toLocaleString('es-MX')
+                    }, function(error) {
+                        if (error) {
+                            console.error('Error guardando usuario:', error);
+                        }
+                        window.location.href = 'index.html';
+                    });
+                })
+                .catch(function(error) {
+                    console.error('Error:', error);
+                    alert('Error al registrarse: ' + error.message);
+                });
+        }
+        
+        function registrarUsuario(e) {
+            e.preventDefault();
+            alert('Función de registro por email pendiente. Usa Google por ahora.');
+        }
+        
+        firebase.auth().onAuthStateChanged(function(user) {
+            if (user) {
+                window.location.href = 'index.html';
+            }
+        });
+    </script>
 </body>
 </html>

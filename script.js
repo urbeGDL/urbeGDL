@@ -4,39 +4,77 @@
 
 let mapModal, markerModal;
 let currentImage = null;
+let currentUser = null;
 
 // ======== INIT ========
 document.addEventListener('DOMContentLoaded', function() {
     console.log('📱 Iniciando UrbeGDL...');
+    initAuth();
     initModalMap();
     cargarReportes();
 });
 
-// ======== NAVIGATION ========
-function showSection(sectionName) {
-    document.querySelectorAll('.nav-tab').forEach(tab => {
-        tab.classList.toggle('active', tab.dataset.section === sectionName);
+// ======== AUTH ========
+function initAuth() {
+    firebase.auth().onAuthStateChanged(function(user) {
+        currentUser = user;
+        updateUIForAuth(user);
+        if (user) {
+            console.log('✅ Usuario:', user.displayName);
+        } else {
+            console.log('❌ No hay usuario');
+        }
     });
-    document.querySelectorAll('.tab-btn').forEach(btn => {
-        btn.classList.toggle('active', btn.dataset.section === sectionName);
-    });
-    document.querySelectorAll('.content-section').forEach(section => {
-        section.classList.toggle('active', section.id === 'section-' + sectionName);
-    });
-    document.getElementById('slideMenu')?.classList.remove('active');
-    window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
-function toggleSlideMenu() {
-    document.getElementById('slideMenu')?.classList.toggle('active');
+function updateUIForAuth(user) {
+    const headerActions = document.getElementById('headerActions');
+    const headerUser = document.getElementById('headerUser');
+    const menuLogin = document.getElementById('menuLogin');
+    const menuPerfil = document.getElementById('menuPerfil');
+    const menuLogout = document.getElementById('menuLogout');
+    const menuUserName = document.getElementById('menuUserName');
+
+    if (user) {
+        headerActions.style.display = 'none';
+        headerUser.style.display = 'flex';
+        document.getElementById('userName').textContent = user.displayName || 'Usuario';
+        document.getElementById('userPhoto').src = user.photoURL || 'imagenes/logo.png';
+        
+        if (menuLogin) menuLogin.style.display = 'none';
+        if (menuPerfil) menuPerfil.style.display = 'flex';
+        if (menuLogout) menuLogout.style.display = 'flex';
+        if (menuUserName) menuUserName.textContent = user.displayName || 'Perfil';
+    } else {
+        headerActions.style.display = 'flex';
+        headerUser.style.display = 'none';
+        
+        if (menuLogin) menuLogin.style.display = 'flex';
+        if (menuPerfil) menuPerfil.style.display = 'none';
+        if (menuLogout) menuLogout.style.display = 'none';
+    }
 }
 
-function focusSearch() {
-    document.getElementById('searchInput')?.focus();
+function loginConGoogle() {
+    const provider = new firebase.auth.GoogleAuthProvider();
+    firebase.auth().signInWithPopup(provider).catch(function(error) {
+        console.error('Error login:', error);
+        alert('Error al iniciar sesión: ' + error.message);
+    });
+}
+
+function cerrarSesion() {
+    firebase.auth().signOut().then(function() {
+        console.log('✅ Sesión cerrada');
+    }).catch(function(error) {
+        console.error('Error:', error);
+    });
 }
 
 function goToProfile() {
-    window.location.href = 'login.html';
+    if (!currentUser) {
+        window.location.href = 'login.html';
+    }
 }
 
 // ======== MODAL MAP ========
@@ -80,6 +118,13 @@ function initModalMap() {
 // ======== MODAL FUNCTIONS ========
 function openReportModal(e) {
     if (e) { e.preventDefault(); e.stopPropagation(); }
+    
+    if (!currentUser) {
+        alert('Debes iniciar sesión para reportar');
+        loginConGoogle();
+        return;
+    }
+    
     const modal = document.getElementById('reportModal');
     if (modal) {
         modal.classList.add('active');
@@ -120,6 +165,12 @@ function handleImageUpload() {
 function guardarReporte() {
     console.log('📤 Guardando reporte...');
     
+    if (!currentUser) {
+        alert('Debes iniciar sesión para reportar');
+        loginConGoogle();
+        return;
+    }
+    
     const descripcion = document.getElementById('reportDescripcion').value.trim();
     const ubicacion = document.getElementById('reportUbicacion').value;
     
@@ -144,7 +195,13 @@ function guardarReporte() {
         ubicacion: ubicacion,
         fecha: new Date().toLocaleString('es-MX'),
         imagen: currentImage || null,
-        timestamp: firebase.database.ServerValue.TIMESTAMP
+        timestamp: firebase.database.ServerValue.TIMESTAMP,
+        autor: {
+            uid: currentUser.uid,
+            nombre: currentUser.displayName || 'Usuario',
+            foto: currentUser.photoURL || null,
+            email: currentUser.email || null
+        }
     }).then(() => {
         console.log('✅ Reporte guardado!');
         document.getElementById('reportDescripcion').value = '';
@@ -201,20 +258,30 @@ function cargarReportes() {
             reportes.forEach(reporte => {
                 const card = document.createElement('div');
                 card.className = 'report-card' + (reporte.imagen ? '' : ' no-image');
+                const autor = reporte.autor || {};
+                const autorNombre = autor.nombre || 'Anónimo';
+                const autorFoto = autor.foto || 'imagenes/logo.png';
+                
                 card.innerHTML = `
-                    <button class="report-delete-btn" onclick="eliminarReporte('${reporte.id}')">×</button>
+                    <button class="report-delete-btn" onclick="event.stopPropagation(); eliminarReporte('${reporte.id}')">×</button>
                     ${reporte.imagen 
-                        ? `<img src="${reporte.imagen}" class="report-image" alt="Reporte" onerror="this.src='imagenes/noimagen.png'">` 
-                        : `<img src="imagenes/noimagen.png" class="report-image" alt="Sin imagen">`}
+                        ? `<img src="${reporte.imagen}" loading="lazy" class="report-image" alt="Reporte" onerror="this.src='imagenes/noimagen.png'">` 
+                        : `<img src="imagenes/noimagen.png" loading="lazy" class="report-image" alt="Sin imagen">`}
                     <div class="report-overlay">
                         <p class="report-overlay-text">${reporte.descripcion}</p>
                     </div>
                     <div class="report-info">
+                        <div class="report-author">
+                            <img src="${autorFoto}" alt="" loading="lazy" class="report-author-img" onerror="this.src='imagenes/logo.png'">
+                            <span class="report-author-name">${autorNombre}</span>
+                        </div>
                         <p class="report-description">${reporte.descripcion}</p>
                         <p class="report-location">📍 ${reporte.ubicacion}</p>
                         <span class="report-date">${reporte.fecha}</span>
                     </div>
                 `;
+                
+                card.onclick = () => openDetailModal(reporte);
                 grid.appendChild(card);
             });
         }, (error) => {
@@ -230,12 +297,58 @@ function cargarReportes() {
 
 // ======== ELIMINAR REPORTE ========
 function eliminarReporte(id) {
-    if (!confirm('¿Eliminar este reporte?')) return;
-    if (!window.db) return;
+    if (!currentUser) {
+        alert('Debes iniciar sesión');
+        return;
+    }
     
-    window.db.ref('reportes/' + id).remove()
-        .then(() => console.log('✅ Eliminado'))
-        .catch((error) => console.error('❌ Error:', error));
+    // Get the report data to check ownership
+    window.db.ref('reportes/' + id).once('value').then(function(snapshot) {
+        const reporte = snapshot.val();
+        if (!reporte) {
+            alert('Reporte no encontrado');
+            return;
+        }
+        
+        const autor = reporte.autor || {};
+        if (autor.uid !== currentUser.uid) {
+            alert('Solo puedes eliminar tus propios reportes');
+            return;
+        }
+        
+        if (!confirm('¿Eliminar este reporte?')) return;
+        
+        window.db.ref('reportes/' + id).remove()
+            .then(() => console.log('✅ Eliminado'))
+            .catch((error) => console.error('❌ Error:', error));
+    }).catch(function(error) {
+        console.error('Error:', error);
+        alert('Error al verificar permisos');
+    });
+}
+
+// ======== DETAIL MODAL (Pinterest Style) ========
+function openDetailModal(reporte) {
+    const modal = document.getElementById('detailModal');
+    if (!modal) return;
+    
+    const autor = reporte.autor || {};
+    
+    document.getElementById('detailImage').src = reporte.imagen || 'imagenes/noimagen.png';
+    document.getElementById('detailAuthorPhoto').src = autor.foto || 'imagenes/logo.png';
+    document.getElementById('detailAuthorName').textContent = autor.nombre || 'Anónimo';
+    document.getElementById('detailDate').textContent = reporte.fecha || '';
+    document.getElementById('detailDesc').textContent = reporte.descripcion || '';
+    document.getElementById('detailLocation').textContent = '📍 ' + (reporte.ubicacion || '');
+    
+    modal.classList.add('active');
+    document.body.style.overflow = 'hidden';
+}
+
+function closeDetailModal() {
+    const modal = document.getElementById('detailModal');
+    if (modal) modal.classList.remove('active');
+    document.body.style.overflow = '';
 }
 
 // ======== FILTRAR ========
@@ -244,6 +357,7 @@ function filtrarReportes() {
     document.querySelectorAll('.report-card').forEach(card => {
         const desc = card.querySelector('.report-description')?.textContent.toLowerCase() || '';
         const loc = card.querySelector('.report-location')?.textContent.toLowerCase() || '';
-        card.style.display = (!search || desc.includes(search) || loc.includes(search)) ? '' : 'none';
+        const author = card.querySelector('.report-author-name')?.textContent.toLowerCase() || '';
+        card.style.display = (!search || desc.includes(search) || loc.includes(search) || author.includes(search)) ? '' : 'none';
     });
 }
