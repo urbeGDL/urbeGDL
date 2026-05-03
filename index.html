@@ -56,13 +56,13 @@
     </div>
 
     <div class="header-right" id="headerUser" style="display:none;">
-        <div class="user-info">
-            <span class="user-name" id="userName"></span>
-            <button class="profile-btn" onclick="goToProfile()">
-                <img id="userPhoto" src="imagenes/logo.png" alt="Perfil" class="profile-img">
-            </button>
+        <button class="profile-btn" onclick="toggleProfileMenu()">
+            <img id="userPhoto" src="imagenes/logo.png" alt="Perfil" class="profile-img">
+        </button>
+        <div class="profile-dropdown" id="profileDropdown">
+            <span id="userName">Usuario</span>
+            <button onclick="cerrarSesion()">Salir</button>
         </div>
-        <button class="logout-btn" onclick="cerrarSesion()">Salir</button>
     </div>
 </header>
 
