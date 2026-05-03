@@ -45,6 +45,13 @@ function updateUIForAuth(user) {
         document.getElementById('userName').textContent = user.displayName || 'Usuario';
         document.getElementById('userPhoto').src = user.photoURL || 'imagenes/logo.png';
         
+        // Indicador de admin
+        const adminEmails = ['urbegdl@gmail.com', 'angelfernando.ra@gmail.com'];
+        const isAdmin = adminEmails.includes(user.email);
+        if (isAdmin) {
+            document.getElementById('userName').textContent = (user.displayName || 'Usuario') + ' ⚙️';
+        }
+        
         if (menuLogin) menuLogin.style.display = 'none';
         if (menuPerfil) menuPerfil.style.display = 'flex';
         if (menuLogout) menuLogout.style.display = 'flex';
@@ -80,6 +87,22 @@ function goToProfile() {
         window.location.href = 'login.html';
     }
 }
+
+function toggleProfileMenu() {
+    const dropdown = document.getElementById('profileDropdown');
+    if (dropdown) {
+        dropdown.style.display = dropdown.style.display === 'none' ? 'flex' : 'none';
+    }
+}
+
+// Cerrar menú al hacer clic fuera
+document.addEventListener('click', function(e) {
+    const dropdown = document.getElementById('profileDropdown');
+    const btn = document.querySelector('.profile-btn');
+    if (dropdown && btn && !dropdown.contains(e.target) && !btn.contains(e.target)) {
+        dropdown.style.display = 'none';
+    }
+});
 
 // ======== NAVIGATION ========
 function showSection(sectionName) {
@@ -340,7 +363,13 @@ function eliminarReporte(id) {
         }
         
         const autor = reporte.autor || {};
-        if (autor.uid !== currentUser.uid) {
+        
+        // Lista de correos con permisos de administrador
+        const adminEmails = ['urbegdl@gmail.com', 'angelfernando.ra@gmail.com'];
+        const isAdmin = adminEmails.includes(currentUser.email);
+        
+        // Permitir eliminar si es admin O si es el autor del reporte
+        if (!isAdmin && autor.uid !== currentUser.uid) {
             alert('Solo puedes eliminar tus propios reportes');
             return;
         }
