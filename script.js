@@ -9,9 +9,13 @@ let currentUser = null;
 // ======== INIT ========
 document.addEventListener('DOMContentLoaded', function() {
     console.log('📱 Iniciando UrbeGDL...');
-    initAuth();
-    initModalMap();
-    cargarReportes();
+    try {
+        initAuth();
+        initModalMap();
+        cargarReportes();
+    } catch(e) {
+        console.error('Error during init:', e);
+    }
 });
 
 // ======== AUTH ========
@@ -75,6 +79,31 @@ function goToProfile() {
     if (!currentUser) {
         window.location.href = 'login.html';
     }
+}
+
+// ======== NAVIGATION ========
+function showSection(sectionName) {
+    console.log('showSection called:', sectionName);
+    document.querySelectorAll('.nav-tab').forEach(tab => {
+        tab.classList.toggle('active', tab.dataset.section === sectionName);
+    });
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.section === sectionName);
+    });
+    document.querySelectorAll('.content-section').forEach(section => {
+        section.classList.toggle('active', section.id === 'section-' + sectionName);
+    });
+    document.getElementById('slideMenu')?.classList.remove('active');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function toggleSlideMenu() {
+    console.log('toggleSlideMenu called');
+    document.getElementById('slideMenu')?.classList.toggle('active');
+}
+
+function focusSearch() {
+    document.getElementById('searchInput')?.focus();
 }
 
 // ======== MODAL MAP ========

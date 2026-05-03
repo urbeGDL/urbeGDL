@@ -522,6 +522,8 @@ body {
     font-weight: 500;
     white-space: nowrap;
     transition: all 0.2s;
+    font-family: inherit;
+    text-align: left;
 }
 
 .new-report-btn:hover {
@@ -1099,6 +1101,10 @@ body {
 @media (max-width: 600px) {
     .main-header {
         padding: 10px 14px;
+    }
+    
+    .menu-btn {
+        display: block !important;
     }
     
     .logo-title {
