@@ -1334,8 +1334,12 @@ body {
    DESKTOP (>900px) - Hide Mobile Elements
    ======================================== */
 @media (min-width: 901px) {
-    .fab-btn, .bottom-tabs, .menu-btn, .header-right {
+    .fab-btn, .bottom-tabs, .menu-btn {
         display: none !important;
+    }
+    
+    .header-right {
+        display: none;
     }
     
     .header-actions {
