@@ -7,13 +7,13 @@
     <title>UrbeGDL - Reportes Ciudadanos</title>
     <link rel="stylesheet" href="styles.css?v=7">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-</head> 
+</head>
 <body>
 
 <!-- Firebase Configuration v8 (compatible) -->
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
-<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
 
 <script>
     const firebaseConfig = {
@@ -26,11 +26,14 @@
         databaseURL: "https://urbegdl-9d9f0-default-rtdb.firebaseio.com"
     };
 
+    const ADMIN_EMAIL = 'urbegdl@gmail.com';
+    
     // Initialize Firebase v8
     try {
         firebase.initializeApp(firebaseConfig);
         window.firebase = firebase;
         window.db = firebase.database();
+        window.auth = firebase.auth();
         console.log('✅ Firebase v8 configurado!');
     } catch (error) {
         console.error('❌ Error Firebase:', error);
@@ -44,7 +47,7 @@
     </div>
     
     <div class="header-center">
-        <a href="#" class="logo-link" onclick="showSection('reportes')">
+        <a href="#" class="logo-link" onclick="mostrarConocenosInline(); return false;">
             <img src="imagenes/logo.png" alt="Logo" class="logo-img">
             <span class="logo-title">UrbeGDL</span>
         </a>
@@ -52,16 +55,26 @@
     
     <div class="header-actions" id="headerActions">
         <a href="login.html" class="header-btn header-btn-outline" id="btnLogin">Iniciar Sesión</a>
-        <a href="unete.html" class="header-btn header-btn-fill" id="btnRegistro">Únete</a>
+        <a href="unete.html" class="header-btn header-btn-fill" id="btnUnete">Únete</a>
     </div>
-
-    <div class="header-right" id="headerUser" style="display:none;">
-        <button class="profile-btn" onclick="toggleProfileMenu()">
-            <img id="userPhoto" src="imagenes/logo.png" alt="Perfil" class="profile-img">
-        </button>
-        <div class="profile-dropdown" id="profileDropdown">
-            <span id="userName">Usuario</span>
-            <button onclick="cerrarSesion()">Salir</button>
+    
+    <div class="header-right">
+        <div class="user-profile-dropdown" id="userProfileDropdown" style="display:none;">
+            <button class="profile-circle" id="profileCircle" onclick="toggleUserMenu()">
+                <img id="userPhoto" src="imagenes/logo.png" alt="Perfil" class="profile-photo-img">
+            </button>
+            <div class="user-dropdown-menu" id="userDropdownMenu">
+                <div class="dropdown-user-info">
+                    <span id="dropdownUserName" class="dropdown-user-name"></span>
+                    <span id="dropdownUserEmail" class="dropdown-user-email"></span>
+                </div>
+                <button class="dropdown-item admin-only" id="btnAdminPanel" onclick="irAdmin()" style="display:none;">
+                    <span>⚙️</span> Panel Admin
+                </button>
+                <button class="dropdown-item" onclick="cerrarSesion()">
+                    <span>🚪</span> Cerrar Sesión
+                </button>
+            </div>
         </div>
     </div>
 </header>
@@ -76,16 +89,90 @@
 
 <!-- Navigation Tabs -->
 <nav class="nav-tabs">
-    <div class="nav-tab" data-section="reportes" onclick="showSection('reportes')">
+    <button class="nav-tab" id="tab-reportes" onclick="mostrarReportesDirecto(); return false;">
         <span class="tab-icon">📋</span>
         <span class="tab-label">Reportes</span>
-        <button type="button" class="new-report-btn" onclick="event.stopPropagation(); openReportModal()">+</button>
-    </div>
-    <button class="nav-tab active" data-section="conocenos" onclick="showSection('conocenos')">
+    </button>
+    <button class="nav-tab active" id="tab-conocenos" onclick="mostrarConocenosDirecto(); return false;">
         <span class="tab-icon">ℹ️</span>
         <span class="tab-label">Conócenos</span>
     </button>
 </nav>
+
+<script>
+function mostrarReportesDirecto() {
+    document.getElementById('section-reportes').classList.remove('hidden');
+    document.getElementById('section-conocenos').classList.add('hidden');
+    document.getElementById('tab-reportes').classList.add('active');
+    document.getElementById('tab-conocenos').classList.remove('active');
+    var fabBtn = document.getElementById('fabBtn');
+    if (fabBtn) fabBtn.classList.add('visible');
+    
+    // Load reportes from Firebase
+    if (typeof cargarReportes === 'function') {
+        cargarReportes();
+    }
+}
+function mostrarConocenosDirecto() {
+    document.getElementById('section-reportes').classList.add('hidden');
+    document.getElementById('section-conocenos').classList.remove('hidden');
+    document.getElementById('tab-conocenos').classList.add('active');
+    document.getElementById('tab-reportes').classList.remove('active');
+    var fabBtn = document.getElementById('fabBtn');
+    if (fabBtn) fabBtn.classList.remove('visible');
+}
+
+function openReportModalDirecto() {
+    var modal = document.getElementById('reportModal');
+    if (modal) {
+        modal.classList.add('active');
+        
+        // Initialize map after modal is visible
+        setTimeout(function() {
+            var mapDiv = document.getElementById('modalMap');
+            if (mapDiv && typeof L !== 'undefined' && !window.mapModal) {
+                // Remove placeholder content
+                mapDiv.innerHTML = '';
+                
+                window.mapModal = L.map('modalMap', { center: [20.6736, -103.3438], zoom: 13 });
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    attribution: '© OpenStreetMap', maxZoom: 18
+                }).addTo(window.mapModal);
+                
+                window.mapModal.on('click', function(e) {
+                    if (window.markerModal) window.markerModal.setLatLng(e.latlng);
+                    else window.markerModal = L.marker(e.latlng).addTo(window.mapModal);
+                    
+                    var ubiInput = document.getElementById('reportUbicacion');
+                    var ubiPreview = document.getElementById('ubicacionPreview');
+                    
+                    fetch('https://nominatim.openstreetmap.org/reverse?format=json&lat=' + e.latlng.lat + '&lon=' + e.latlng.lng + '&addressdetails=1')
+                        .then(function(res) { return res.json(); })
+                        .then(function(data) {
+                            var addr = data.address || {};
+                            var direccion = addr.road || addr.neighbourhood || addr.suburb || data.display_name || '';
+                            if (addr.city || addr.municipality) direccion += ', ' + (addr.city || addr.municipality);
+                            if (ubiInput && ubiPreview) {
+                                ubiInput.value = direccion;
+                                ubiPreview.textContent = '📍 ' + direccion;
+                            }
+                        });
+                });
+            }
+            if (window.mapModal) {
+                window.mapModal.invalidateSize();
+            }
+        }, 300);
+    }
+}
+
+function closeReportModalDirecto() {
+    var modal = document.getElementById('reportModal');
+    if (modal) {
+        modal.classList.remove('active');
+    }
+}
+</script>
 
 <!-- Main Content -->
 <main class="main-content">
@@ -99,7 +186,7 @@
     </section>
     
     <!-- Conócenos Section -->
-    <section id="section-conocenos" class="content-section active">
+    <section id="section-conocenos" class="content-section">
         <div class="conocenos-hero">
             <h2>¿Qué es UrbeGDL?</h2>
             <p class="hero-text">UrbeGDL es una iniciativa tecnológica nacida en el corazón de Guadalajara. Nuestra plataforma surge como una respuesta a la necesidad de conectar a los ciudadanos con el entorno urbano, utilizando la tecnología para dar voz a quienes viven y transitan por nuestras calles.</p>
@@ -121,24 +208,16 @@
     </section>
 </main>
 
-<!-- FAB (Mobile) -->
-<button class="fab-btn" onclick="openReportModal()">+</button>
+<!-- FAB (Floating Action Button) -->
+<button class="fab-btn visible" id="fabBtn" onclick="openReportModalDirecto();" title="Agregar reporte">+</button>
 
 <!-- Bottom Tab Bar (Mobile) -->
 <nav class="bottom-tabs">
-    <button class="tab-btn" onclick="showSection('reportes')">
+    <button class="tab-btn" onclick="mostrarReportesInline()">
         <span class="tab-icon">🏠</span>
-        <span class="tab-label">Inicio</span>
+        <span class="tab-label">Reportes</span>
     </button>
-    <button class="tab-btn" onclick="focusSearch()">
-        <span class="tab-icon">🔍</span>
-        <span class="tab-label">Buscar</span>
-    </button>
-    <button class="tab-btn" onclick="openReportModal()">
-        <span class="tab-icon">➕</span>
-        <span class="tab-label">Reportar</span>
-    </button>
-    <button class="tab-btn active" onclick="showSection('conocenos')">
+    <button class="tab-btn" onclick="mostrarConocenosInline()">
         <span class="tab-icon">ℹ️</span>
         <span class="tab-label">Conócenos</span>
     </button>
@@ -153,19 +232,16 @@
             <h2>UrbeGDL</h2>
         </div>
         <div class="menu-body">
-            <a href="#" class="menu-item" onclick="toggleSlideMenu(); showSection('reportes');">
+            <a href="#" class="menu-item" onclick="toggleSlideMenu(); mostrarReportesInline(); return false;">
                 <span>📋</span> Reportes
             </a>
-            <a href="#" class="menu-item" id="menuLogin" onclick="toggleSlideMenu(); window.location.href='login.html'">
+            <a href="login.html" class="menu-item">
                 <span>🔑</span> Iniciar Sesión
             </a>
-            <a href="#" class="menu-item" id="menuPerfil" style="display:none" onclick="toggleSlideMenu(); window.location.href='login.html'">
-                <span>👤</span> <span id="menuUserName">Perfil</span>
+            <a href="unete.html" class="menu-item">
+                <span>📝</span> Únete
             </a>
-            <a href="#" class="menu-item" id="menuLogout" style="display:none" onclick="toggleSlideMenu(); cerrarSesion()">
-                <span>🚪</span> Cerrar Sesión
-            </a>
-            <a href="#" class="menu-item" onclick="toggleSlideMenu(); showSection('conocenos');">
+            <a href="#" class="menu-item" onclick="toggleSlideMenu(); mostrarConocenosInline(); return false;">
                 <span>ℹ️</span> Conócenos
             </a>
         </div>
@@ -173,11 +249,11 @@
 </div>
 
 <!-- Report Modal -->
-<div class="report-modal" id="reportModal" onclick="if(event.target === this) closeReportModal()">
+<div class="report-modal" id="reportModal" onclick="if(event.target === this) closeReportModalDirecto()">
     <div class="modal-container" onclick="event.stopPropagation()">
         <div class="modal-header">
             <h2>Nuevo Reporte</h2>
-            <button class="modal-close" onclick="closeReportModal()">×</button>
+            <button class="modal-close" onclick="closeReportModalDirecto()">×</button>
         </div>
         
         <div class="modal-body">
@@ -190,46 +266,163 @@
                 <input type="file" id="reportImage" accept="image/*" onchange="handleImageUpload()" hidden>
             </div>
             
-            <label class="modal-label">📍 Ubicación (toca el mapa):</label>
-            <div id="modalMap" class="modal-map"></div>
+            <label class="modal-label">📍 Ubicación (toca el mapa para seleccionar):</label>
+            <div id="modalMap" class="modal-map">
+                <div style="display:flex;align-items:center;justify-content:center;height:100%;color:#666;font-size:14px;">
+                    📍 Toca aquí para seleccionar ubicación
+                </div>
+            </div>
             <input type="hidden" id="reportUbicacion" value="">
             <p id="ubicacionPreview" class="ubicacion-text"></p>
         </div>
         
-        <button class="modal-submit" onclick="guardarReporte()">📤 Enviar Reporte</button>
+        <button class="modal-submit" onclick="enviarReporteInline()">📤 Enviar Reporte</button>
     </div>
 </div>
 
-<!-- Detail Modal (Pinterest Style) -->
-<div class="detail-modal" id="detailModal" onclick="if(event.target === this) closeDetailModal()">
-    <div class="detail-container" onclick="event.stopPropagation()">
-        <button class="modal-close" onclick="closeDetailModal()">×</button>
-        <div class="detail-layout">
-            <div class="detail-image-wrap">
-                <img id="detailImage" src="" alt="Reporte" class="detail-image">
-            </div>
-            <div class="detail-info">
-                <div class="detail-header">
-                    <div class="detail-author" id="detailAuthor">
-                        <img id="detailAuthorPhoto" src="imagenes/logo.png" alt="" class="detail-author-img">
-                        <div>
-                            <p id="detailAuthorName" class="detail-author-name">Usuario</p>
-                            <p id="detailDate" class="detail-date"></p>
-                        </div>
-                    </div>
-                </div>
-                <div class="detail-description">
-                    <h3>Descripción</h3>
-                    <p id="detailDesc"></p>
-                </div>
-                <div class="detail-location">
-                    <h3>Ubicación</h3>
-                    <p id="detailLocation"></p>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
+<script>
+    // Auth state listener
+    window.auth.onAuthStateChanged((user) => {
+        console.log('Auth state:', user ? user.email : 'logged out');
+        updateUI(user);
+    });
+    
+    function updateUI(user) {
+        const headerActions = document.getElementById('headerActions');
+        const userProfileDropdown = document.getElementById('userProfileDropdown');
+        const userPhoto = document.getElementById('userPhoto');
+        const dropdownUserName = document.getElementById('dropdownUserName');
+        const dropdownUserEmail = document.getElementById('dropdownUserEmail');
+        const btnAdminPanel = document.getElementById('btnAdminPanel');
+        const ADMIN_EMAIL = 'urbegdl@gmail.com';
+        
+        if (user) {
+            if (headerActions) {
+                headerActions.style.display = 'none';
+                headerActions.classList.add('hidden');
+            }
+            if (userProfileDropdown) {
+                userProfileDropdown.style.display = 'block';
+                userProfileDropdown.classList.add('logged-in');
+            }
+            dropdownUserName.textContent = user.displayName || 'Usuario';
+            dropdownUserEmail.textContent = user.email;
+            if (user.photoURL) {
+                userPhoto.src = user.photoURL;
+            } else {
+                userPhoto.src = 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="50" fill="#27ae60"/><text x="50" y="60" text-anchor="middle" fill="white" font-size="40" font-family="Arial">'+((user.displayName || user.email || 'U').charAt(0).toUpperCase())+'</text></svg>');
+            }
+            if (btnAdminPanel) {
+                btnAdminPanel.style.display = (user.email === ADMIN_EMAIL) ? 'flex' : 'none';
+            }
+            window.currentUser = user;
+            window.isAdmin = (user.email === ADMIN_EMAIL);
+            console.log('✅ Usuario:', user.email, window.isAdmin ? '(Admin)' : '');
+        } else {
+            if (headerActions) {
+                headerActions.style.display = 'flex';
+                headerActions.classList.remove('hidden');
+            }
+            if (userProfileDropdown) {
+                userProfileDropdown.style.display = 'none';
+                userProfileDropdown.classList.remove('logged-in');
+            }
+            window.currentUser = null;
+        }
+    }
+    
+    function toggleUserMenu() {
+        const menu = document.getElementById('userDropdownMenu');
+        if (menu.classList.contains('active')) {
+            menu.classList.remove('active');
+        } else {
+            menu.classList.add('active');
+        }
+    }
+    
+    document.addEventListener('click', function(e) {
+        const dropdown = document.getElementById('userProfileDropdown');
+        const menu = document.getElementById('userDropdownMenu');
+        if (dropdown && menu && !dropdown.contains(e.target)) {
+            menu.classList.remove('active');
+        }
+    });
+    
+    function enviarReporteInline() {
+        console.log('📤 Intentando enviar reporte...');
+        
+        const user = window.currentUser || (window.firebase ? firebase.auth().currentUser : null);
+        
+        if (!user) {
+            alert('⚠️ Debes iniciar sesión para crear reportes.\n📌 Ve a "Iniciar Sesión" en el menú.');
+            window.location.href = 'login.html';
+            return;
+        }
+        
+        const descripcion = document.getElementById('reportDescripcion').value.trim();
+        const ubicacion = document.getElementById('reportUbicacion').value;
+        
+        console.log('📝 Descripción:', descripcion);
+        console.log('📍 Ubicación:', ubicacion);
+        console.log('👤 Usuario:', user.email);
+        
+        if (!descripcion || descripcion.length < 10) {
+            alert('⚠️ La descripción debe tener al menos 10 caracteres');
+            return;
+        }
+        
+        if (!ubicacion) {
+            alert('⚠️ Selecciona una ubicación en el mapa');
+            return;
+        }
+        
+        if (!window.db) {
+            alert('❌ Error de conexión. Recarga la página.');
+            return;
+        }
+        
+        console.log('✅ Enviando a Firebase...');
+        
+        const reportesRef = window.db.ref('reportes');
+        reportesRef.push({
+            userId: user.uid,
+            userEmail: user.email,
+            userName: user.displayName || user.email,
+            descripcion: descripcion,
+            ubicacion: ubicacion,
+            fecha: new Date().toLocaleString('es-MX'),
+            imagen: window.currentImage || null,
+            timestamp: firebase.database.ServerValue.TIMESTAMP
+        }).then(() => {
+            console.log('✅ Reporte guardado!');
+            document.getElementById('reportDescripcion').value = '';
+            document.getElementById('reportUbicacion').value = '';
+            document.getElementById('ubicacionPreview').textContent = '';
+            document.getElementById('uploadText').textContent = 'Añadir foto';
+            document.getElementById('reportImage').value = '';
+            window.currentImage = null;
+            if (window.markerModal) { mapModal.removeLayer(window.markerModal); window.markerModal = null; }
+            closeReportModalDirecto();
+            alert('✅ Reporte enviado correctamente!');
+            mostrarReportesDirecto();
+        }).catch((error) => {
+            console.error('❌ Error:', error);
+            alert('Error al guardar reporte: ' + error.message);
+        });
+    }
+    
+    function irAdmin() {
+        window.location.href = 'admin.html';
+    }
+    
+    function cerrarSesion() {
+        firebase.auth().signOut().then(() => {
+            window.location.href = 'index.html';
+        }).catch((error) => {
+            console.error('Error:', error);
+        });
+    }
+</script>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="script.js"></script>
