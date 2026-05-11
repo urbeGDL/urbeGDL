@@ -8,7 +8,7 @@ let currentUser = null;
 
 // Coordenadas de CUCEI y radio de cobertura
 const CUCEI_COORDS = { lat: 20.6547, lng: -103.3252 };
-const RADIO_KM = 3;
+const RADIO_KM = 5;
 
 // ======== FUNCIONES DE DISTANCIA ========
 function calcularDistancia(lat1, lng1, lat2, lng2) {
