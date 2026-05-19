@@ -175,6 +175,30 @@
     height: 24px;
 }
 
+.btn-forms {
+    width: 100%;
+    padding: 14px;
+    background-color: #25D366;
+    color: white;
+    border: none;
+    border-radius: 10px;
+    font-size: 1rem;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s;
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    margin-top: 15px;
+}
+
+.btn-forms:hover {
+    background-color: #128C7E;
+    transform: translateY(-2px);
+}
+
 .whatsapp-section {
     margin-top: 20px;
 }
